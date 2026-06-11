@@ -183,18 +183,18 @@
 <body>
 
     <div class="header">
-        <h1>美联储货币政策决策框架 + 数据入口</h1>
+        <h1>美联储 · 货币政策看板（还没研究好，不是最终版）</h1>
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div class="live-status">
                 当前时间: <span id="clock"></span><br>
-                <span style="color:#34d399;">● 紧凑版 v6.9 单位优化版</span>
+                <span style="color:#34d399;">● 易则易知·简则易从·成位乎中</span>
             </div>
             <button onclick="loadAllFredData()" class="fred-key-btn" style="background:#059669; color:white; border-color:#059669;">⟳ 刷新数据</button>
         </div>
     </div>
 
     <div class="disclaimer">
-        <strong>说明：</strong> 数据通过 Cloudflare Workers 安全代理获取（Key 不暴露在前端）。核心数据对利率走向影响最大；整体 PCE/CPI 用于对比核心。右下板块多为官方跳转。
+        <strong>说明：</strong> 经济数据来源：FRED，通过API key获取。右下板块无法直接获取，自己跳转过去看~
     </div>
 
     <div class="dashboard-grid">
@@ -235,7 +235,7 @@
             <a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" class="live-link-btn" style="background:#334155;">→ 整体 CPI (FRED)</a>
             
             <div class="framework-note">
-                核心 vs 整体对比有助于判断通胀广度。ISM 制造业 PMI 官方每月发布（见日历）。
+                核心数据对利率走向影响最大；整体 PCE/CPI 用于对比核心，有助于判断通胀广度。ISM 制造业 PMI 无法实时获取，官方每月发布（见下方日历）。
             </div>
         </div>
 
@@ -263,7 +263,7 @@
             </a>
             
             <div class="framework-note" style="margin-top:6px;">
-                倒计时自动指向下一个未发生会议。会议后自动切换。
+                倒计时自动指向下一个未发生会议，会议后自动切换。
             </div>
         </div>
 
@@ -308,7 +308,7 @@
             <a href="https://fred.stlouisfed.org/series/CES0500000003" target="_blank" class="live-link-btn" style="background:#334155;">→ 平均时薪 (FRED)</a>
             
             <div class="framework-note">
-                非农、失业率、初请、JOLTS 是判断就业最核心指标。ISM 制造业 PMI 官方每月发布（见日历）。
+                非农、失业率、初请、JOLTS 是判断就业最核心指标。
             </div>
         </div>
 
@@ -351,7 +351,7 @@
                     打开 CME FedWatch 工具 ↗
                 </a>
                 <div style="margin-top:3px; font-size:10.5px; color:#64748b;">
-                    参考：<a href="https://cn.investing.com/central-banks/fed-rate-monitor" target="_blank" style="color:#60a5fa;">英为财情</a>
+                    亦可交叉参考：<a href="https://cn.investing.com/central-banks/fed-rate-monitor" target="_blank" style="color:#60a5fa;">英为财情の美联储利率观测器</a>
                 </div>
             </div>
 
@@ -651,11 +651,4 @@
 </html>
 ``` 
 
-**单位修改说明（已优化）：**
-
-- **非农就业新增 (MoM)**: `+172k`（标准月度变化单位，肉眼友好）
-- **JOLTS 职位空缺**: `8.0M`（改用百万单位，不再是 8000k）
-- **初请失业金**: `212k`（保持 k 单位，数值合理）
-- 其他指标保持原有合理单位
-
-现在数据看起来更专业、易读了。把 `FRED_PROXY_BASE` 改成你的 Workers 地址后直接使用即可。需要再调整任何地方随时说！
+**第一部分，美联储基准利率区间，基本上就酱。等后续研究多了，再来调整这部分。第二部分打算做利率走廊、国债收益率曲线、国债期货市场走势，第三部分再加spread curve、久期凸度计算器等等...**
