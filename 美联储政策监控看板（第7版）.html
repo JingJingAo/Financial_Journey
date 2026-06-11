@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美联储决策入口</title>
+    <style>
+        :root {
+            --bg: #f5f0e6;
+            --card: #fffaf0;
+            --border: #e8d9c2;
+            --text: #2f2721;
+            --text-sec: #6b5f54;
+            --accent-blue: #2563eb;
+            --accent-green: #059669;
+            --accent-red: #dc2626;
+            --accent-gold: #d97706;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        header h1 { font-size: 19px; font-weight: 700; }
+        .clock { font-size: 13px; color: var(--text-sec); }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 18px;
+        }
+
+        /* 左侧框架 - 更紧凑 */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .fw-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 14px 16px;
+        }
+        .fw-card.inflation { border-left: 4px solid var(--accent-red); }
+        .fw-card.fed { border-left: 4px solid var(--accent-blue); }
+        .fw-card.employment { border-left: 4px solid var(--accent-green); }
+
+        .fw-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .fw-card p {
+            font-size: 12.5px;
+            color: var(--text-sec);
+            margin-bottom: 10px;
+        }
+        .fw-link {
+            display: block;
+            font-size: 12px;
+            color: var(--accent-blue);
+            text-decoration: none;
+            margin-top: 4px;
+        }
+        .fw-link:hover { text-decoration: underline; }
+
+        /* 倒计时 */
+        .countdown-box {
+            background: #f1e9d9;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            margin: 8px 0;
+        }
+        #countdown-timer {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            font-family: monospace;
+        }
+
+        /* 右侧 */
+        .right-col {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .calendar-wrap {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .calendar-wrap .title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        /* 三个入口卡片 - 放在日历右侧区域下方 */
+        .entry-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .entry-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+        }
+        .entry-card h4 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .entry-card p {
+            font-size: 12px;
+            color: var(--text-sec);
+            flex: 1;
+            margin-bottom: 10px;
+        }
+        .entry-btn {
+            display: inline-block;
+            background: var(--accent-blue);
+            color: #fff;
+            padding: 7px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 12.5px;
+            text-align: center;
+            font-weight: 500;
+        }
+        .entry-btn.green { background: var(--accent-green); }
+        .entry-btn.gold { background: var(--accent-gold); }
+
+        @media (max-width: 1050px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .entry-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>美联储决策入口</h1>
+        <div class="clock"><span id="clock"></span></div>
+    </header>
+
+    <div class="main-grid">
+
+        <!-- 左侧：紧凑概念框架 -->
+        <div class="left-col">
+
+            <!-- 通胀 -->
+            <div class="fw-card inflation">
+                <div class="fw-title">通胀约束</div>
+                <p>通胀是降息的硬约束。若核心通胀未向2%目标收敛，降息空间受限。</p>
+                <a href="https://fred.stlouisfed.org/series/PCEPILFE" target="_blank" class="fw-link">核心 PCE → FRED</a>
+                <a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" class="fw-link">CPI → FRED</a>
+            </div>
+
+            <!-- FFR + 倒计时 -->
+            <div class="fw-card fed">
+                <div class="fw-title">政策利率基准</div>
+                <div style="font-size:20px; font-weight:700; text-align:center; margin:6px 0 4px;">3.50% - 3.75%</div>
+                
+                <div class="countdown-box">
+                    <div style="font-size:11px; color:var(--text-sec);">下次 FOMC</div>
+                    <div id="countdown-timer">计算中...</div>
+                    <div id="meeting-date" style="font-size:11px; color:var(--text-sec); margin-top:3px;"></div>
+                </div>
+                <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="fw-link">FOMC 官方日程表 →</a>
+            </div>
+
+            <!-- 就业 -->
+            <div class="fw-card employment">
+                <div class="fw-title">就业与增长</div>
+                <p>就业是政策转向的重要信号。若失业率持续上升超出预期，防御性降息概率增加。</p>
+                <a href="https://fred.stlouisfed.org/series/PAYEMS" target="_blank" class="fw-link">非农就业 → FRED</a>
+                <a href="https://fred.stlouisfed.org/series/UNRATE" target="_blank" class="fw-link">失业率 → FRED</a>
+            </div>
+
+        </div>
+
+        <!-- 右侧：日历 + 三个入口 -->
+        <div class="right-col">
+
+            <!-- TradingView 日历（拉长） -->
+            <div class="calendar-wrap">
+                <div class="title">重磅宏观数据出炉日历</div>
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                    {
+                        "colorTheme": "light",
+                        "isWidescreen": false,
+                        "width": "100%",
+                        "height": "400",
+                        "importanceFilter": "1",
+                        "countryFilter": "us"
+                    }
+                    </script>
+                </div>
+            </div>
+
+            <!-- 三个入口卡片 -->
+            <div class="entry-row">
+
+                <!-- CME -->
+                <div class="entry-card">
+                    <h4>CME FedWatch 概率</h4>
+                    <p>市场对下次 FOMC 的实时隐含概率。</p>
+                    <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" class="entry-btn green">打开 CME FedWatch</a>
+                </div>
+
+                <!-- 官员与点阵图 -->
+                <div class="entry-card">
+                    <h4>官员态度 & 点阵图</h4>
+                    <p>最新 SEP 点阵图与 FOMC 成员表态。</p>
+                    <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl.htm" target="_blank" class="entry-btn">查看最新点阵图</a>
+                </div>
+
+                <!-- 长周期 -->
+                <div class="entry-card">
+                    <h4>长周期利率图</h4>
+                    <p>1990 年以来联邦基金利率完整走势。</p>
+                    <a href="https://fred.stlouisfed.org/series/FEDFUNDS" target="_blank" class="entry-btn gold">打开 FRED 长周期图</a>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // 实时时钟
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(now.getDate()).padStart(2, '0') + ' ' + 
+                String(now.getHours()).padStart(2, '0') + ':' + 
+                String(now.getMinutes()).padStart(2, '0');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // FOMC 倒计时（自动指向下一个未来会议，无 bug）
+        const fomcMeetings = [
+            { date: new Date("2026-06-17T14:00:00-05:00"), label: "2026年6月17日" },
+            { date: new Date("2026-07-29T14:00:00-05:00"), label: "2026年7月29日" },
+            { date: new Date("2026-09-16T14:00:00-05:00"), label: "2026年9月16日" },
+            { date: new Date("2026-10-28T14:00:00-05:00"), label: "2026年10月28日" },
+            { date: new Date("2026-12-09T14:00:00-05:00"), label: "2026年12月9日" }
+        ];
+
+        function updateCountdown() {
+            const now = new Date();
+            let nextMeeting = null;
+
+            for (let i = 0; i < fomcMeetings.length; i++) {
+                if (fomcMeetings[i].date > now) {
+                    nextMeeting = fomcMeetings[i];
+                    break;
+                }
+            }
+
+            const timerEl = document.getElementById('countdown-timer');
+            const dateEl = document.getElementById('meeting-date');
+
+            if (!nextMeeting) {
+                timerEl.textContent = "本年排期已结束";
+                dateEl.textContent = "";
+                return;
+            }
+
+            dateEl.textContent = nextMeeting.label;
+
+            const diff = nextMeeting.date - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+            timerEl.textContent = days + "天 " + hours + "小时";
+        }
+        setInterval(updateCountdown, 60000);
+        updateCountdown();
+    </script>
+</body>
+</html>

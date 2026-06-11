@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美联储决策框架 + 实时数据入口 (v5 聚合版)</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #131a2c;
+            --border-color: #222f47;
+            --text-primary: #f1f5f9;
+            --text-secondary: #64748b;
+            --accent-up: #ef4444;
+            --accent-down: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-gold: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 16px; border-bottom: 2px solid var(--border-color); margin-bottom: 24px;
+        }
+        .header h1 { font-size: 22px; font-weight: 700; }
+        .live-status {
+            font-size: 13px; color: var(--text-secondary);
+        }
+        .disclaimer {
+            background: rgba(245,158,11,0.1);
+            border: 1px solid rgba(245,158,11,0.3);
+            border-radius: 6px;
+            padding: 12px 16px;
+            font-size: 13px;
+            margin-bottom: 24px;
+            color: #fbbf24;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+        .col-12 { grid-column: span 12; }
+        
+        .scale-inflation { border-left: 5px solid var(--accent-up); }
+        .scale-employment { border-left: 5px solid var(--accent-down); }
+        .scale-fed { border-top: 5px solid var(--accent-blue); }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .live-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--accent-blue);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+        .live-link-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .countdown-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed rgba(245,158,11,0.4);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin: 12px 0;
+        }
+        #countdown-timer {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            font-family: monospace;
+        }
+
+        .framework-note {
+            font-size: 12.5px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+
+        .tradingview-container {
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1024px) {
+            .col-4, .col-6, .col-12 { grid-column: span 12; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>美联储货币政策决策框架 + 实时数据入口</h1>
+        <div class="live-status">
+            当前时间: <span id="clock"></span><br>
+            <span style="color:#34d399;">● 实时聚合版 v5</span>
+        </div>
+    </div>
+
+    <div class="disclaimer">
+        <strong>重要说明：</strong> 本看板提供<strong>宏观决策概念框架</strong>（通胀 vs 就业的天平逻辑） + <strong>一键直达实时官方来源</strong>。<br>
+        所有具体数值、概率、最新数据请以右侧/下方官方实时链接为准。本文件不存储过时数据。
+    </div>
+
+    <div class="dashboard-grid">
+
+        <!-- 左盘：通胀框架入口 -->
+        <div class="card col-4 scale-inflation">
+            <div class="section-title">
+                <span>左盘：通胀约束框架</span>
+                <span style="color:#ef4444; font-size:12px;">硬刹车逻辑</span>
+            </div>
+            <p style="font-size:13.5px; line-height:1.6; margin-bottom:16px;">
+                通胀是降息的硬约束。只要核心通胀走势未 convincingly 向2%目标收敛，联储就难以大幅打开降息空间。
+            </p>
+            <a href="https://fred.stlouisfed.org/series/PCEPILFE" target="_blank" class="live-link-btn">
+                → 查看最新核心 PCE (FRED 实时)
+            </a>
+            <a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" class="live-link-btn" style="background:#334155;">
+                → 查看最新 CPI (FRED 实时)
+            </a>
+            <div class="framework-note">
+                建议同时关注：核心 PCE 环比折年率、核心 CPI 同比、平均时薪增速。
+            </div>
+        </div>
+
+        <!-- 中间：FOMC 倒计时 + 实时入口 -->
+        <div class="card col-4 scale-fed">
+            <div class="section-title">
+                <span>美联储政策利率基准 (FFR)</span>
+            </div>
+            
+            <div style="text-align:center; margin:10px 0 16px;">
+                <div style="font-size:13px; color:#64748b;">当前目标区间（参考）</div>
+                <div style="font-size:28px; font-weight:800; color:#fff; margin:4px 0;">3.50% - 3.75%</div>
+                <div style="font-size:12px; color:#64748b;">（以最新 FOMC 声明为准）</div>
+            </div>
+
+            <div class="countdown-box">
+                <div style="font-size:13px; margin-bottom:6px;">距离下一次 FOMC 利率决议</div>
+                <div id="countdown-timer">计算中...</div>
+                <div id="meeting-date" style="font-size:12px; color:#64748b; margin-top:6px;"></div>
+            </div>
+
+            <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="live-link-btn" style="width:100%; justify-content:center;">
+                → FOMC 官方完整议息日程表
+            </a>
+            
+            <div class="framework-note" style="margin-top:14px;">
+                倒计时会自动指向下一个未发生的会议。会议结束后自动切换至下一次。
+            </div>
+        </div>
+
+        <!-- 右盘：就业框架入口 -->
+        <div class="card col-4 scale-employment">
+            <div class="section-title">
+                <span>右盘：就业与增长阻力框架</span>
+                <span style="color:#10b981; font-size:12px;">发动机逻辑</span>
+            </div>
+            <p style="font-size:13.5px; line-height:1.6; margin-bottom:16px;">
+                就业是政策转向的重要发动机。若失业率持续显著上升并超出软着陆预期，联储倾向于启动防御性降息。
+            </p>
+            <a href="https://fred.stlouisfed.org/series/PAYEMS" target="_blank" class="live-link-btn">
+                → 查看最新非农就业 (FRED 实时)
+            </a>
+            <a href="https://fred.stlouisfed.org/series/UNRATE" target="_blank" class="live-link-btn" style="background:#334155;">
+                → 查看最新失业率 (FRED 实时)
+            </a>
+            <div class="framework-note">
+                建议同时关注：ISM 制造业 PMI、JOLTS 职位空缺、初请失业金。
+            </div>
+        </div>
+
+        <!-- CME 实时概率入口（最重要） -->
+        <div class="card col-12">
+            <div class="section-title">
+                <span>市场实时定价：CME FedWatch 利率预期概率</span>
+                <span style="color:#64748b; font-size:12px;">最权威市场隐含概率</span>
+            </div>
+            
+            <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1; min-width:280px;">
+                    <p style="font-size:14px; color:#64748b; margin-bottom:8px;">
+                        当前市场对下一次 FOMC 的真实定价（30天联邦基金期货隐含）
+                    </p>
+                    <div style="font-size:13px; color:#34d399; margin-bottom:4px;">
+                        ● 实时更新，无需手动维护
+                    </div>
+                </div>
+                
+                <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" 
+                   target="_blank" 
+                   class="live-link-btn" 
+                   style="font-size:15px; padding:14px 28px; background:#059669;">
+                    立即打开 CME FedWatch 实时概率工具 ↗
+                </a>
+            </div>
+            
+            <div style="margin-top:12px; font-size:12.5px; color:#64748b;">
+                推荐同时参考：<a href="https://cn.investing.com/central-banks/fed-rate-monitor" target="_blank" style="color:#60a5fa;">英为财情 Fed Rate Monitor</a>
+            </div>
+        </div>
+
+        <!-- 实时数据日历 -->
+        <div class="card col-6">
+            <div class="section-title">
+                <span>重磅宏观数据出炉日历（实时）</span>
+            </div>
+            <div class="tradingview-container">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                    {
+                        "colorTheme": "dark",
+                        "isWidescreen": false,
+                        "width": "100%",
+                        "height": "360",
+                        "importanceFilter": "1",
+                        "countryFilter": "us"
+                    }
+                    </script>
+                </div>
+            </div>
+            <div style="font-size:12px; color:#64748b; margin-top:8px;">
+                来源：TradingView（实时更新）
+            </div>
+        </div>
+
+        <!-- 官员态度 + 点阵图入口 -->
+        <div class="card col-6">
+            <div class="section-title">
+                <span>FOMC 官员态度与点阵图</span>
+            </div>
+            
+            <div style="margin-bottom:16px;">
+                <p style="font-size:13.5px; line-height:1.6;">
+                    FOMC 决策高度数据驱动。中立务实派目前占主导，单月数据超预期易引发立场快速调整。
+                </p>
+            </div>
+
+            <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl.htm" target="_blank" class="live-link-btn" style="margin-bottom:8px;">
+                → 查看最新点阵图 (SEP) 官方来源
+            </a>
+            
+            <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="live-link-btn" style="background:#334155;">
+                → FOMC 成员名单与最新声明
+            </a>
+            
+            <div class="framework-note" style="margin-top:12px;">
+                票委立场分布属于定性分析，建议参考 MNI Hawk-Dove Spectrum 或最新 FOMC 纪要。
+            </div>
+        </div>
+
+        <!-- 长周期利率图入口 -->
+        <div class="card col-12">
+            <div class="section-title">
+                <span>长周期利率坐标系（1990-2026）</span>
+            </div>
+            
+            <div style="display:flex; gap:20px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <p style="font-size:14px; color:#64748b;">
+                        查看过去36年联邦基金利率完整走势 + NBER 衰退阴影标注。<br>
+                        历史复盘：利率拐点与大牛市/泡沫破裂高度相关。
+                    </p>
+                </div>
+                <a href="https://fred.stlouisfed.org/series/FEDFUNDS" target="_blank" class="live-link-btn" style="font-size:15px; padding:14px 24px;">
+                    打开 FRED 官方交互式长周期图表 ↗
+                </a>
+            </div>
+            
+            <div style="margin-top:12px; font-size:12.5px; color:#64748b;">
+                补充监测美联储资产负债表：<a href="https://fred.stlouisfed.org/series/WALCL" target="_blank" style="color:#60a5fa;">WALCL ↗</a>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 实时时钟
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + 
+                String(now.getDate()).padStart(2,'0') + ' ' + 
+                String(now.getHours()).padStart(2,'0') + ':' + 
+                String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // FOMC 倒计时（自动指向下一个未来会议）
+        const fomcMeetings = [
+            { date: new Date("2026-06-17T14:00:00-05:00"), label: "2026年06月17日 (周三)" },
+            { date: new Date("2026-07-29T14:00:00-05:00"), label: "2026年07月29日 (周三)" },
+            { date: new Date("2026-09-16T14:00:00-05:00"), label: "2026年09月16日 (周三)" },
+            { date: new Date("2026-10-28T14:00:00-05:00"), label: "2026年10月28日 (周三)" },
+            { date: new Date("2026-12-09T14:00:00-05:00"), label: "2026年12月09日 (周三)" }
+        ];
+
+        function updateCountdown() {
+            const now = new Date();
+            let nextMeeting = null;
+
+            for (let meeting of fomcMeetings) {
+                if (meeting.date > now) {
+                    nextMeeting = meeting;
+                    break;
+                }
+            }
+
+            const timerEl = document.getElementById('countdown-timer');
+            const dateEl = document.getElementById('meeting-date');
+
+            if (!nextMeeting) {
+                timerEl.textContent = "本年度排期已结束";
+                dateEl.textContent = "请更新会议列表";
+                return;
+            }
+
+            dateEl.textContent = "目标会议: " + nextMeeting.label;
+
+            const diff = nextMeeting.date - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            timerEl.textContent = `${days}天 ${hours}小时 ${mins}分钟`;
+        }
+
+        setInterval(updateCountdown, 60000);
+        updateCountdown();
+    </script>
+</body>
+</html>

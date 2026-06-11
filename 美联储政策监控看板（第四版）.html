@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美联储货币政策看板 (Part 1) - v3 易更新配置版</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #131a2c;
+            --border-color: #222f47;
+            --text-primary: #f1f5f9;
+            --text-secondary: #64748b;
+            --accent-up: #ef4444;
+            --accent-down: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-gold: #f59e0b;
+            --accent-neutral: #64748b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 15px; border-bottom: 2px solid var(--border-color); margin-bottom: 20px;
+        }
+        header h1 { font-size: 22px; font-weight: 700; }
+        header h1 span { font-size: 13px; color: var(--accent-blue); margin-left: 10px; font-weight: normal; }
+        .refresh-time { font-size: 13px; color: var(--text-secondary); }
+
+        .dashboard-grid {
+            display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px;
+        }
+        .card {
+            background-color: var(--bg-card); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 18px; overflow: hidden;
+        }
+        .card-title {
+            font-size: 15px; font-weight: 600; margin-bottom: 14px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .col-4 { grid-column: span 4; }
+        .col-6 { grid-column: span 6; }
+        .col-12 { grid-column: span 12; }
+
+        .scale-inflation { border-left: 5px solid var(--accent-up); }
+        .scale-employment { border-left: 5px solid var(--accent-down); }
+        .scale-fed { border-top: 5px solid var(--accent-blue); background: linear-gradient(180deg, rgba(59,130,246,0.06) 0%, transparent 100%); }
+
+        .rate-value { font-size: 34px; font-weight: 800; text-align: center; margin: 10px 0; color: #fff; text-shadow: 0 0 12px rgba(59,130,246,0.4); }
+        .countdown-container {
+            background: rgba(0,0,0,0.25); border-radius: 6px; padding: 10px; text-align: center;
+            font-size: 13px; border: 1px dashed rgba(245,158,11,0.35);
+        }
+        #countdown-timer { color: var(--accent-gold); font-weight: 700; font-family: monospace; font-size: 15px; }
+
+        .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .data-table th, .data-table td { padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.06); text-align: left; }
+        .data-table th { color: var(--text-secondary); font-weight: 500; }
+        .trend-up { color: var(--accent-up); font-weight: 600; }
+        .trend-down { color: var(--accent-down); font-weight: 600; }
+
+        /* === CME 概率 - JS驱动 + 支持多区间 === */
+        .cme-container { margin: 12px 0; }
+        .prob-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;
+        }
+        .prob-card {
+            background: rgba(0,0,0,0.28); border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 16px 14px; text-align: center;
+            transition: all 0.2s ease;
+        }
+        .prob-card.hold { border-color: #3b82f6; background: rgba(59,130,246,0.09); }
+        .prob-card.cut { border-color: #10b981; }
+        .prob-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .prob-pct { font-size: 42px; font-weight: 800; line-height: 1; margin: 6px 0 4px; }
+        .prob-card.hold .prob-pct { color: #60a5fa; text-shadow: 0 0 16px rgba(59,130,246,0.5); }
+        .prob-card.cut .prob-pct { color: #34d399; }
+        .prob-rate { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+        .prob-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.5; min-height: 52px; }
+        .prob-bar {
+            height: 6px; background: #1e293b; border-radius: 3px; margin-top: 10px; overflow: hidden;
+            border: 1px solid #334155;
+        }
+        .prob-bar-fill { height: 100%; transition: width 0.5s ease; }
+        .prob-card.hold .prob-bar-fill { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .prob-card.cut .prob-bar-fill { background: linear-gradient(90deg, #059669, #10b981); }
+
+        .market-interpret {
+            margin-top: 16px; font-size: 13px; color: var(--text-secondary);
+            background: rgba(59,130,246,0.07); padding: 14px 16px; border-radius: 8px;
+            border-left: 4px solid var(--accent-blue); line-height: 1.65;
+        }
+        .insight-panel {
+            background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.25);
+            border-radius: 8px; padding: 16px; font-size: 12.5px; line-height: 1.6;
+        }
+        .insight-panel h4 { color: #34d399; font-size: 13.5px; margin-bottom: 10px; }
+
+        /* === 票委分布 - 视觉直观版 === */
+        .voter-visual {
+            display: flex; align-items: center; gap: 8px; margin: 12px 0;
+            background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px;
+        }
+        .voter-segment {
+            height: 28px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700; color: #fff; position: relative;
+            transition: all 0.3s ease;
+        }
+        .voter-segment.hawk { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .voter-segment.neutral { background: linear-gradient(90deg, #3b82f6, #60a5fa); box-shadow: 0 0 0 3px rgba(59,130,246,0.4); }
+        .voter-segment.dove { background: linear-gradient(90deg, #10b981, #34d399); }
+        .voter-label {
+            position: absolute; top: -22px; left: 50%; transform: translateX(-50%);
+            font-size: 11px; white-space: nowrap; color: var(--text-secondary);
+        }
+        .voter-total {
+            font-size: 15px; font-weight: 700; color: var(--accent-blue); margin-left: auto;
+            padding-left: 12px; border-left: 2px solid var(--border-color);
+        }
+
+        .links-zone { display: flex; gap: 12px; justify-content: flex-end; font-size: 12px; margin-top: 12px; flex-wrap: wrap; }
+        .links-zone a { color: var(--accent-blue); text-decoration: none; }
+        .links-zone a:hover { text-decoration: underline; }
+
+        .fred-fallback {
+            background: rgba(0,0,0,0.3); border: 2px dashed var(--border-color);
+            border-radius: 8px; padding: 24px; text-align: center; margin: 10px 0;
+        }
+        .fred-fallback a {
+            display: inline-block; background: var(--accent-blue); color: #fff;
+            padding: 10px 22px; border-radius: 6px; text-decoration: none; font-weight: 600;
+            margin-top: 8px; transition: all 0.2s;
+        }
+        .fred-fallback a:hover { background: #2563eb; transform: translateY(-1px); }
+
+        .meta-list { list-style: none; font-size: 13px; }
+        .meta-list li { margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .meta-list span.label { color: var(--text-secondary); }
+
+        @media (max-width: 1024px) {
+            .col-4, .col-6, .col-12 { grid-column: span 12; }
+            .prob-grid { grid-template-columns: 1fr; }
+            .voter-visual { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>美联储货币政策与宏观核心驱动力终端 <span>(Part 1 - v3 易更新配置版)</span></h1>
+        <div class="refresh-time">当前视窗时间: <span id="clock">加载中...</span> | <span style="color:#f59e0b;">数据快照: 2026-06-11</span></div>
+    </header>
+
+    <main class="dashboard-grid">
+
+        <!-- ROW 1: 天平结构 (保持不变，数据可手动更新) -->
+        <section class="card col-4 scale-inflation">
+            <div class="card-title">
+                <span>左盘：通胀约束 (Inflation Risks)</span>
+                <span style="color: var(--accent-up); font-size: 11px;">走高 → 压制降息空间</span>
+            </div>
+            <table class="data-table">
+                <thead><tr><th>核心指标</th><th>前值</th><th>最新值</th></tr></thead>
+                <tbody>
+                    <tr><td><b>核心 PCE 物价指数 (MoM)</b></td><td>0.2%</td><td class="trend-up">0.2%</td></tr>
+                    <tr><td><b>核心 CPI 同比 (YoY)</b></td><td>3.2%</td><td class="trend-up">3.1%</td></tr>
+                    <tr><td><b>平均时薪增速 (YoY)</b></td><td>3.8%</td><td>3.5%</td></tr>
+                </tbody>
+            </table>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; line-height:1.35;">
+                * 注：通胀是降息的“硬刹车”。若核心PCE环比走势无法 convincingly 向2%目标收敛，联储就难以大幅拓宽降息通道。
+            </div>
+        </section>
+
+        <section class="card col-4 scale-fed">
+            <div class="card-title">
+                <span>美联储政策利率基准 (FFR)</span>
+                <span style="color:#fff; background:var(--accent-blue); padding:1px 6px; border-radius:3px; font-size:10px;">当前区间</span>
+            </div>
+            <div class="rate-value">3.50% - 3.75%</div>
+            <div class="countdown-container">
+                <div>距离下一次 FOMC 利率决议还有:</div>
+                <div id="countdown-timer">正在计算排期...</div>
+                <div id="meeting-date" style="font-size:11px; color:var(--text-secondary); margin-top:4px;"></div>
+            </div>
+            <div style="text-align:center; margin-top:10px;">
+                <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" style="font-size:12px; color:var(--accent-blue); text-decoration:none;">FOMC 官方议息日程表直达 ↗</a>
+            </div>
+        </section>
+
+        <section class="card col-4 scale-employment">
+            <div class="card-title">
+                <span>右盘：增长与就业阻力 (Growth Risks)</span>
+                <span style="color: var(--accent-down); font-size: 11px;">垮塌 → 逼迫联储拯救降息</span>
+            </div>
+            <table class="data-table">
+                <thead><tr><th>核心指标</th><th>前值</th><th>最新值</th></tr></thead>
+                <tbody>
+                    <tr><td><b>非农就业人口净增 (NFP)</b></td><td>15.2万</td><td class="trend-down">13.5万</td></tr>
+                    <tr><td><b>失业率 (Unemployment)</b></td><td>4.1%</td><td class="trend-up">4.2%</td></tr>
+                    <tr><td><b>ISM 制造业 PMI</b></td><td>48.5</td><td>47.8</td></tr>
+                </tbody>
+            </table>
+            <div style="font-size:11px; color:var(--text-secondary); margin-top:12px; line-height:1.35;">
+                * 注：就业是政策转向的“发动机”。若失业率持续显著上升并超出软着陆预期阈值，联储倾向于启动连续、跨步的防御性降息。
+            </div>
+        </section>
+
+        <!-- ================= ROW 2: CME 概率 - JS驱动易更新版 ================= -->
+        <section class="card col-12">
+            <div class="card-title">
+                <span>市场前瞻：CME FedWatch 利率预期概率分布（下次会议定价）</span>
+                <span style="color:var(--text-secondary); font-size:12px;">数据快照: 2026-06-11 | <span id="cme-source">来源：CME FedWatch Tool</span></span>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 7fr 5fr; gap:18px; align-items:start;">
+                
+                <!-- 左侧：概率卡片（自动渲染，支持2-4个区间） -->
+                <div class="cme-container">
+                    <div id="prob-grid" class="prob-grid"></div>
+                    
+                    <div class="market-interpret" id="market-interpret">
+                        <!-- JS 自动填充当前概率对应的解读 -->
+                    </div>
+                </div>
+
+                <!-- 右侧：关键启示（可随概率更新而手动同步文案） -->
+                <div class="insight-panel">
+                    <h4>📌 市场定价对投资的即时启示</h4>
+                    <ul style="padding-left:4px; margin:0;">
+                        <li><strong>✓</strong> 当前极高 Hold 概率 → 短期内预防性/保险性降息空间有限，市场不认为联储需要急于行动。</li>
+                        <li><strong>✓</strong> 就业放缓已被部分定价，但尚未触及触发“连续跨步降息”的警戒线。</li>
+                        <li><strong>⚠ 敏感触发器</strong>：下次 NFP 显著低于预期（&lt;10万）或核心 PCE 超预期下行，概率曲线会快速左移。</li>
+                        <li><strong>→ 实操建议</strong>：6/17 会议前重点跟踪非农与通胀数据，波动率大概率上升；长端美债收益率与美元指数对 data surprise 反应将更灵敏。</li>
+                    </ul>
+                    <div style="margin-top:12px; font-size:11.5px; color:#64748b; border-top:1px dashed rgba(255,255,255,0.15); padding-top:8px;">
+                        实时交叉验证：<br>
+                        <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank">① CME 官方 FedWatch</a><br>
+                        <a href="https://cn.investing.com/central-banks/fed-rate-monitor" target="_blank">② 英为财情 Fed Rate Monitor</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROW 3: 官员态度 + 点阵图 -->
+        <section class="card col-6">
+            <div class="card-title">
+                <span>重磅宏观数据出炉日历及华尔街下期预估</span>
+                <span style="color: var(--accent-down); font-size: 11px;">实时数据流</span>
+            </div>
+            <div class="tradingview-widget-container">
+                <div class="tradingview-widget-container__widget"></div>
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                { "colorTheme": "dark", "isWidescreen": false, "width": "100%", "height": "345", "importanceFilter": "1", "countryFilter": "us" }
+                </script>
+            </div>
+        </section>
+
+        <section class="card col-6">
+            <div class="card-title">
+                <span>前瞻指引修正案：FOMC 官员态度及点阵图综合研判</span>
+            </div>
+            
+            <!-- 票委分布 - 全新视觉直观版 -->
+            <div style="margin-bottom:16px;">
+                <h4 style="font-size:13px; color:var(--accent-blue); margin-bottom:8px;">FOMC 内部势力博弈（12位投票委员）</h4>
+                
+                <!-- 视觉分段条 -->
+                <div class="voter-visual">
+                    <div class="voter-segment hawk" style="width: 16.67%;">鹰派<br><span style="font-size:10px; opacity:0.9;">2席</span></div>
+                    <div class="voter-segment neutral" style="width: 50%;">中立务实派 ★ 主导<br><span style="font-size:10px; opacity:0.95;">6席</span></div>
+                    <div class="voter-segment dove" style="width: 33.33%;">鸽派<br><span style="font-size:10px; opacity:0.9;">4席</span></div>
+                    <div class="voter-total">12/12</div>
+                </div>
+                
+                <div style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-top:6px;">
+                    <strong style="color:#60a5fa;">一眼结论：</strong> 中立务实派绝对主导（50%），数据驱动特征明显。单月超预期数据易引发立场快速调整。
+                </div>
+            </div>
+
+            <div style="font-size:12px; color:var(--text-secondary); line-height:1.55;">
+                <p style="margin-bottom:8px;">
+                    <strong style="color:var(--text-primary);">点阵图 (Dot Plot) 来源与解读：</strong><br>
+                    最新 SEP 点阵图请直接查看美联储官网：<br>
+                    <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl.htm" target="_blank" style="color:#60a5fa; font-weight:600;">→ FOMC Summary of Economic Projections (最新点阵图)</a>
+                </p>
+                <p>
+                    重点关注每季度末会议公布的“较长期联邦基金利率中位数”。若中位数上移，长端美债（10Y/30Y）将面临抛售压力，资产贴现率被迫提高。
+                </p>
+            </div>
+        </section>
+
+        <!-- ROW 4: 长周期 - 已修复为可靠链接版 -->
+        <section class="card col-12">
+            <div class="card-title">
+                <span>长周期坐标系：1990 - 2026 基金利率基准走向图</span>
+                <span style="color: var(--text-secondary); font-size: 11px;">圣路易斯联储 FRED 官方数据</span>
+            </div>
+            
+            <!-- FRED 修复版：直接可靠链接 + 说明 -->
+            <div class="fred-fallback">
+                <div style="font-size:15px; font-weight:600; margin-bottom:8px; color:#60a5fa;">
+                    FRED 交互式长周期利率图表（推荐）
+                </div>
+                <p style="font-size:13px; color:var(--text-secondary); max-width:620px; margin:0 auto 12px;">
+                    由于 FRED embed 技术限制（部分参数已变更导致旧链接404），<br>
+                    点击下方按钮可直接打开官方完整交互式图表（支持缩放、 recession 阴影标注、下载数据等全部功能）。
+                </p>
+                <a href="https://fred.stlouisfed.org/series/FEDFUNDS" target="_blank" style="font-size:14px;">
+                    立即打开 FRED 官方 FEDFUNDS 交互式图表 ↗
+                </a>
+                <div style="margin-top:14px; font-size:12px; color:#64748b;">
+                    图表说明：灰色垂直阴影 = NBER 官方认定的美国经济衰退期。<br>
+                    历史复盘显示：大牛市启动与泡沫破裂均高度对应利率曲线关键拐点。
+                </div>
+            </div>
+            
+            <div style="margin-top:8px; font-size:12px; color:var(--text-secondary);">
+                补充监测：<a href="https://fred.stlouisfed.org/series/WALCL" target="_blank" style="color:#60a5fa; font-weight:600;">美联储资产负债表总规模 (WALCL) ↗</a>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // ================== 1. 系统时钟 ==================
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + 
+                String(now.getDate()).padStart(2,'0') + ' ' + 
+                String(now.getHours()).padStart(2,'0') + ':' + 
+                String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ================== 2. FOMC 倒计时（日期已修正） ==================
+        const fomcMeetings = [
+            { date: new Date("2026-06-17T14:00:00-05:00"), label: "2026年06月17日 (周三)" },
+            { date: new Date("2026-07-29T14:00:00-05:00"), label: "2026年07月29日 (周三)" },
+            { date: new Date("2026-09-16T14:00:00-05:00"), label: "2026年09月16日 (周三)" },
+            { date: new Date("2026-10-28T14:00:00-05:00"), label: "2026年10月28日 (周三)" },
+            { date: new Date("2026-12-09T14:00:00-05:00"), label: "2026年12月09日 (周三)" }
+        ];
+
+        function updateCountdown() {
+            const now = new Date();
+            let next = null;
+            for (let m of fomcMeetings) { if (m.date > now) { next = m; break; } }
+            const timer = document.getElementById('countdown-timer');
+            const dateEl = document.getElementById('meeting-date');
+            if (!next) { timer.textContent = "2026年度排期已执行完毕"; dateEl.textContent = ""; return; }
+            dateEl.textContent = "决议目标日: " + next.label;
+            const diff = next.date - now;
+            const d = Math.floor(diff / (1000*60*60*24));
+            const h = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+            const m = Math.floor((diff % (1000*60*60)) / (1000*60));
+            timer.textContent = d + "天 " + h + "小时 " + m + "分钟";
+        }
+        setInterval(updateCountdown, 60000); updateCountdown();
+
+        // ================== 3. CME 概率 - 核心：JS驱动，极易更新 ==================
+        // 【重要说明】后续数据变化时，只需修改下面这个 probs 数组即可！
+        // - pct: 概率百分比（数字）
+        // - rate: 利率区间文字
+        // - type: "hold" 或 "cut" （控制颜色）
+        // - desc: 该概率对应的简短解释（会自动显示在卡片上）
+        // - interpret: 整体市场解读文案（会显示在蓝色解读框）
+        // 支持任意数量区间（2个、3个、4个都行），会自动横向排列
+        const cmeProbs = [
+            {
+                pct: 96.7,
+                rate: "维持当前利率 (3.50% - 3.75%)",
+                type: "hold",
+                desc: "通胀与就业数据双双处于可控区间，市场认为联储最可能维持区间继续观察。",
+                interpret: "当前市场定价显示，<strong>下次FOMC极大概率维持利率不变</strong>。通胀约束仍有效制衡就业放缓压力，政策基调为“数据依赖 + 谨慎渐进”。若后续数据超预期转弱，概率会快速向左移动。"
+            },
+            {
+                pct: 3.3,
+                rate: "降息25个基点 (3.25% - 3.50%)",
+                type: "cut",
+                desc: "需下次非农显著弱于预期（<10万）或核心通胀超预期降温才会触发。",
+                interpret: ""   // 只有主要概率的 interpret 会显示
+            }
+            // 如果未来变成3个区间，只需在这里继续添加对象即可，页面会自动渲染
+            // 示例（注释掉）：
+            // { pct: 0, rate: "降息50bp", type: "cut", desc: "极端情景", interpret: "" }
+        ];
+
+        function renderCMEProbs() {
+            const grid = document.getElementById('prob-grid');
+            grid.innerHTML = '';
+            
+            cmeProbs.forEach(p => {
+                const card = document.createElement('div');
+                card.className = `prob-card ${p.type}`;
+                
+                card.innerHTML = `
+                    <div style="font-size:11px; color:${p.type==='hold' ? '#60a5fa' : '#34d399'}; font-weight:600; letter-spacing:0.5px;">
+                        ${p.type === 'hold' ? '市场强烈共识' : '低概率尾部情景'}
+                    </div>
+                    <div class="prob-pct">${p.pct}%</div>
+                    <div class="prob-rate">${p.rate}</div>
+                    <div class="prob-desc">${p.desc}</div>
+                    <div class="prob-bar"><div class="prob-bar-fill" style="width: ${p.pct}%"></div></div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // 显示主要概率的解读（第一个通常是 hold）
+            const interpretBox = document.getElementById('market-interpret');
+            const mainInterpret = cmeProbs.find(p => p.interpret && p.interpret.length > 10);
+            if (mainInterpret) {
+                interpretBox.innerHTML = `<strong style="color:#60a5fa;">当前市场定价核心结论：</strong><br>${mainInterpret.interpret}`;
+            }
+        }
+        renderCMEProbs();   // 页面加载时自动渲染
+
+        // 【使用提示】以后更新概率时：
+        // 1. 修改上面 cmeProbs 数组里的 pct、rate、desc、interpret
+        // 2. 保存文件，刷新浏览器即可看到新概率 + 新解读
+        // 3. 如果变成3个区间，直接在数组里加一个对象，页面自动多出一张卡片
+        // 这样就避免了“文案过时”和“需要我重新生成整个HTML”的问题
+
+        // 注意：真正100%自动抓取CME最新数据在纯本地HTML中受技术限制（CORS + 页面动态渲染），
+        // 所以采用“极简配置 + 自动渲染”的方式，是目前最实用、也最符合金融严谨性的方案。
+    </script>
+</body>
+</html>
