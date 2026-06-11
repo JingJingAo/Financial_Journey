@@ -193,10 +193,6 @@
         </div>
     </div>
 
-    <div class="disclaimer">
-        <strong>说明：</strong> 经济数据来源：FRED，通过API key获取。右下板块无法直接获取，自己跳转过去看~
-    </div>
-
     <div class="dashboard-grid">
 
         <!-- 左盘 -->
@@ -301,11 +297,11 @@
                 </div>
             </div>
 
-            <a href="https://fred.stlouisfed.org/series/PAYEMS" target="_blank" class="live-link-btn">→ 非农就业 (FRED)</a>
-            <a href="https://fred.stlouisfed.org/series/UNRATE" target="_blank" class="live-link-btn" style="background:#334155;">→ 失业率 (FRED)</a>
-            <a href="https://fred.stlouisfed.org/series/ICSA" target="_blank" class="live-link-btn" style="background:#334155;">→ 初请失业金 (FRED)</a>
-            <a href="https://fred.stlouisfed.org/series/JTSJOL" target="_blank" class="live-link-btn" style="background:#334155;">→ JOLTS 职位空缺 (FRED)</a>
-            <a href="https://fred.stlouisfed.org/series/CES0500000003" target="_blank" class="live-link-btn" style="background:#334155;">→ 平均时薪 (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/PAYEMS" target="_blank" class="live-link-btn">→ 非农就业</a>
+            <a href="https://fred.stlouisfed.org/series/UNRATE" target="_blank" class="live-link-btn" style="background:#334155;">→ 失业率</a>
+            <a href="https://fred.stlouisfed.org/series/ICSA" target="_blank" class="live-link-btn" style="background:#334155;">→ 初请失业金</a>
+            <a href="https://fred.stlouisfed.org/series/JTSJOL" target="_blank" class="live-link-btn" style="background:#334155;">→ JOLTS 职位空缺</a>
+            <a href="https://fred.stlouisfed.org/series/CES0500000003" target="_blank" class="live-link-btn" style="background:#334155;">→ 平均时薪</a>
             
             <div class="framework-note">
                 非农、失业率、初请、JOLTS 是判断就业最核心指标。
@@ -333,8 +329,8 @@
                 </div>
             </div>
             <div class="calendar-note">
-                来源：TradingView。典型数据列顺序通常为：<strong>Actual（实际值）</strong> | <strong>Forecast（市场预测）</strong> | <strong>Prior（前值）</strong>。<br>
-                鼠标悬停或点击具体事件可查看完整详情。
+                典型数据列顺序通常为：<strong>Actual（实际值）</strong> | <strong>Forecast（市场预测）</strong> | <strong>Prior（前值）</strong>。<br>
+                鼠标悬停或点击具体事件可查看完整详情。数据来源：TradingView。
             </div>
         </div>
 
@@ -649,6 +645,10 @@
     </script>
 </body>
 </html>
-``` 
-
-**第一部分，美联储基准利率区间，基本上就酱。等后续研究多了，再来调整这部分。第二部分打算做利率走廊、国债收益率曲线、国债期货市场走势，第三部分再加spread curve、久期凸度计算器等等...**
+ 
+    <div class="disclaimer">
+        <strong>说明：</strong> 经济数据来源为FRED，通过官方API key获取。右下板块无法直接拉取，自己跳转过去看~
+第一部分，放美联储基准利率区间，基本上就酱。等后续研究多了，再来调整这部分。
+第二部分打算做利率走廊、国债收益率曲线、国债期货市场走势；第三部分再加spread curve、久期凸度计算器等等...
+    </div>
+```
