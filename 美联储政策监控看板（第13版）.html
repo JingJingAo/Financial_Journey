@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>美联储决策框架 + 数据入口 (v6.7 最终修复版)</title>
+    <title>美联储决策框架 + 数据入口 (v6.8 Workers代理版)</title>
     <style>
         :root {
             --bg-main: #0b0f19;
@@ -152,18 +152,6 @@
             line-height: 1.3;
         }
         .data-meta { font-size: 10px; color: #64748b; display: block; margin-top: 1px; }
-        .fred-key-btn {
-            background: #334155;
-            color: #cbd5e1;
-            border: 1px solid #475569;
-            padding: 3px 9px;
-            border-radius: 4px;
-            font-size: 11.5px;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .fred-key-btn:hover { background: #475569; }
         .data-loading { color: #64748b; font-style: italic; }
         .current-rate {
             font-size: 12.5px;
@@ -199,22 +187,19 @@
         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div class="live-status">
                 当前时间: <span id="clock"></span><br>
-                <span style="color:#34d399;">● 紧凑版 v6.7 最终修复版</span>
+                <span style="color:#34d399;">● 紧凑版 v6.8 Workers代理版</span>
             </div>
-            <button onclick="setFredApiKey()" class="fred-key-btn">🔑 设置 FRED Key</button>
-            <button onclick="loadAllFredData()" class="fred-key-btn" style="background:#059669; color:white; border-color:#059669;">⟳ 刷新</button>
-            <a href="https://fred.stlouisfed.org/docs/api/api_key.html" target="_blank" class="fred-link" style="margin-left:4px;">免费注册 FRED API Key →</a>
+            <button onclick="loadAllFredData()" class="fred-key-btn" style="background:#059669; color:white; border-color:#059669;">⟳ 刷新数据</button>
         </div>
     </div>
 
     <div class="disclaimer">
-        <strong>说明：</strong> 动态数值来自 FRED API（免费 Key）。设置 Key 后自动加载最新数据 + 上期对比。Key 仅存浏览器本地。
-        核心数据对利率走向影响最大；整体 PCE/CPI 用于对比核心。右下板块多为官方跳转（CME 概率、点阵图最佳来源）。
+        <strong>说明：</strong> 数据通过 Cloudflare Workers 安全代理获取（Key 不暴露在前端）。核心数据对利率走向影响最大；整体 PCE/CPI 用于对比核心。右下板块多为官方跳转。
     </div>
 
     <div class="dashboard-grid">
 
-        <!-- 左盘：通胀框架入口（全红边框 + 核心+整体数据） -->
+        <!-- 左盘 -->
         <div class="card col-4 scale-inflation">
             <div class="section-title">
                 <span>左盘：通胀约束框架</span>
@@ -224,7 +209,6 @@
                 通胀是降息的硬约束。只要核心通胀未 convincingly 向2%目标收敛，联储就难以大幅打开降息空间。
             </p>
 
-            <!-- 动态数据快照（按重要度排序） -->
             <div class="data-snapshot">
                 <div class="section-title">最新关键数据 (FRED) — 当前 | 上期对比</div>
                 <div class="data-row">
@@ -255,7 +239,7 @@
             </div>
         </div>
 
-        <!-- 中间：FOMC 倒计时 -->
+        <!-- 中间 FOMC -->
         <div class="card col-4 scale-fed">
             <div class="section-title">
                 <span>美联储政策利率基准 (FFR)</span>
@@ -283,7 +267,7 @@
             </div>
         </div>
 
-        <!-- 右盘：就业框架入口（全绿边框 + 按重要度排序） -->
+        <!-- 右盘 -->
         <div class="card col-4 scale-employment">
             <div class="section-title">
                 <span>右盘：就业与增长阻力框架</span>
@@ -293,7 +277,6 @@
                 就业是政策转向的重要发动机。若失业率持续显著上升并超出软着陆预期，联储倾向于启动防御性降息。
             </p>
 
-            <!-- 动态数据快照（按重要度排序） -->
             <div class="data-snapshot">
                 <div class="section-title">最新关键数据 (FRED) — 当前 | 上期对比（对利率影响最大）</div>
                 <div class="data-row">
@@ -329,7 +312,7 @@
             </div>
         </div>
 
-        <!-- 重磅宏观数据出炉日历 -->
+        <!-- 日历 -->
         <div class="card col-7">
             <div class="section-title">
                 <span>重磅宏观数据出炉日历</span>
@@ -351,11 +334,11 @@
             </div>
             <div class="calendar-note">
                 来源：TradingView。典型数据列顺序通常为：<strong>Actual（实际值）</strong> | <strong>Forecast（市场预测）</strong> | <strong>Prior（前值）</strong>。<br>
-                鼠标悬停或点击事件可查看完整详情。下次发布日期以日历为准。
+                鼠标悬停或点击具体事件可查看完整详情。
             </div>
         </div>
 
-        <!-- 右侧紧凑栏 -->
+        <!-- 右侧三个板块 -->
         <div class="col-5 right-sidebar">
 
             <div class="card compact-card">
@@ -403,7 +386,10 @@
     </div>
 
     <script>
-const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
+        // ==================== 配置区（必须修改） ====================
+        // 把下面这行改成你自己部署的 Cloudflare Workers 地址
+        const FRED_PROXY_BASE = 'https://fred-proxy.jing-aou.workers.dev/';
+
         // 实时时钟
         function updateClock() {
             const now = new Date();
@@ -448,55 +434,21 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
         setInterval(updateCountdown, 60000);
         updateCountdown();
 
-        // ==================== FRED 动态数据功能 ====================
-        const FRED_BASE = 'https://api.stlouisfed.org/fred/series/observations';
-
-        function getFredApiKey() {
-            return localStorage.getItem('fredApiKey') || null;
-        }
-
-        function setFredApiKey() {
-            const key = prompt(
-                '请输入你的 FRED API Key（免费注册：https://fred.stlouisfed.org/docs/api/api_key.html ）\n' +
-                'Key 将保存在浏览器本地存储，仅用于本看板。'
-            );
-            if (key && key.trim()) {
-                localStorage.setItem('fredApiKey', key.trim());
-                alert('API Key 已保存！页面将自动刷新并加载数据。');
-                location.reload();
-            }
-        }
-
-        function showDataLoading(ids) {
-            ids.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.innerHTML = '<span class="data-loading">加载中...</span>';
-            });
-        }
-
-        function showDataError(id, msg = '获取失败，请检查 Key 或网络') {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = `<span style="color:#f87171; font-size:11px;">${msg}</span>`;
-        }
-
+        // ==================== FRED 数据获取（通过 Workers 代理） ====================
         async function fetchFredObservations(seriesId, limit = 2) {
-            const apiKey = getFredApiKey();
-            if (!apiKey) return null;
-            const url = `${FRED_BASE}?series_id=${seriesId}&api_key=${apiKey}&file_type=json&limit=${limit}&sort_order=desc`;
+            if (!FRED_PROXY_BASE || FRED_PROXY_BASE.includes('YOUR-WORKER')) {
+                console.error('请先修改 FRED_PROXY_BASE 为你的 Workers 地址');
+                return null;
+            }
+            const url = `${FRED_PROXY_BASE}?series_id=${seriesId}&limit=${limit}`;
             try {
                 const res = await fetch(url);
-                if (!res.ok) {
-                    console.error('FRED API error:', res.status, await res.text());
-                    return null;
-                }
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json();
-                if (data.error_message) {
-                    console.error('FRED error_message:', data.error_message);
-                    return null;
-                }
+                if (data.error_message) throw new Error(data.error_message);
                 return data.observations || [];
             } catch (e) {
-                console.error('FRED fetch exception for', seriesId, e);
+                console.error('Proxy fetch error for', seriesId, e);
                 return null;
             }
         }
@@ -507,7 +459,19 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
         }
 
-        // 核心 PCE 环比折年率（简化版，避免计算错误）
+        function showDataLoading(ids) {
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<span class="data-loading">加载中...</span>';
+            });
+        }
+
+        function showDataError(id, msg = '获取失败') {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = `<span style="color:#f87171; font-size:11px;">${msg}</span>`;
+        }
+
+        // 以下所有数据更新函数保持不变（调用 fetchFredObservations）
         async function updatePceMomAnn() {
             const el = document.getElementById('pce-mom-ann');
             const obs = await fetchFredObservations('PCEPILFE', 2);
@@ -517,10 +481,9 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             if (isNaN(v1) || isNaN(v0) || v0 === 0) { showDataError('pce-mom-ann', '数据异常'); return; }
             const mom = (v1 / v0 - 1) * 100;
             const annRate = (Math.pow(1 + mom / 100, 12) - 1) * 100;
-            el.innerHTML = `${annRate.toFixed(2)}% <span class="data-meta">${formatDate(obs[0].date)} | 上期约 ${( (Math.pow(1+(v0/parseFloat(obs[1].value||v0)-1)*100/100,12)-1)*100 ).toFixed(1)}%</span>`;
+            el.innerHTML = `${annRate.toFixed(2)}% <span class="data-meta">${formatDate(obs[0].date)} | 上期约 ${((Math.pow(1 + (v0 / v0 - 1) * 100 / 100, 12) - 1) * 100).toFixed(1)}%</span>`;
         }
 
-        // 核心 CPI 指数
         async function updateCpiCore() {
             const el = document.getElementById('cpi-core');
             const obs = await fetchFredObservations('CPILFESL', 2);
@@ -532,7 +495,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${v0.toFixed(1)} <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
 
-        // 整体 PCE
         async function updatePceHeadline() {
             const el = document.getElementById('pce-headline');
             const obs = await fetchFredObservations('PCEPI', 2);
@@ -544,7 +506,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${v0.toFixed(1)} <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
 
-        // 整体 CPI
         async function updateCpiHeadline() {
             const el = document.getElementById('cpi-headline');
             const obs = await fetchFredObservations('CPIAUCSL', 2);
@@ -556,7 +517,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${v0.toFixed(1)} <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
 
-        // 非农就业新增
         async function updateNonfarmPayrolls() {
             const el = document.getElementById('nonfarm-payrolls');
             const obs = await fetchFredObservations('PAYEMS', 2);
@@ -569,7 +529,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${sign}${change}k <span style="font-size:10px; color:${color};">(上期 ${Math.round(v1)}k)</span> <span class="data-meta">${formatDate(obs[0].date)}</span>`;
         }
 
-        // 初请失业金
         async function updateInitialClaims() {
             const el = document.getElementById('initial-claims');
             const obs = await fetchFredObservations('ICSA', 2);
@@ -581,7 +540,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${(v0 / 1000).toFixed(0)}k <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
 
-        // JOLTS
         async function updateJolts() {
             const el = document.getElementById('jolts-openings');
             const obs = await fetchFredObservations('JTSJOL', 2);
@@ -593,7 +551,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${(v0 / 1000).toFixed(0)}k <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
 
-        // 平均时薪
         async function updateAvgHourlyEarnings() {
             const el = document.getElementById('avg-hourly-earnings');
             const obs = await fetchFredObservations('CES0500000003', 2);
@@ -610,7 +567,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = html;
         }
 
-        // 失业率
         async function updateUnrate() {
             const el = document.getElementById('unrate');
             const obs = await fetchFredObservations('UNRATE', 2);
@@ -622,7 +578,6 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             el.innerHTML = `${v0.toFixed(1)}% <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
 
-        // 当前有效联邦基金利率
         async function updateFedFundsEffective() {
             const el = document.getElementById('fed-funds-effective');
             const obs = await fetchFredObservations('FEDFUNDS', 1);
@@ -634,19 +589,8 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             if (el) el.innerHTML = `${val.toFixed(2)}% <span style="font-size:10px; color:#64748b;">(${formatDate(obs[0].date)})</span>`;
         }
 
-        // 加载所有数据
         async function loadAllFredData() {
-            const apiKey = getFredApiKey();
             const dataIds = ['pce-mom-ann', 'cpi-core', 'pce-headline', 'cpi-headline', 'nonfarm-payrolls', 'initial-claims', 'jolts-openings', 'avg-hourly-earnings', 'unrate', 'fed-funds-effective'];
-            
-            if (!apiKey) {
-                dataIds.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.innerHTML = '<span style="color:#f59e0b; font-size:11px;">请点击右上角设置 FRED Key</span>';
-                });
-                return;
-            }
-
             showDataLoading(dataIds);
 
             await Promise.all([
@@ -663,21 +607,9 @@ const FRED_PROXY_BASE ="https://fred-proxy.jing-aou.workers.dev/";
             ]);
         }
 
-        function initFredData() {
-            const key = getFredApiKey();
-            if (key) {
-                loadAllFredData();
-            } else {
-                const ids = ['pce-mom-ann', 'cpi-core', 'pce-headline', 'cpi-headline', 'nonfarm-payrolls', 'initial-claims', 'jolts-openings', 'avg-hourly-earnings', 'unrate', 'fed-funds-effective'];
-                ids.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.innerHTML = '<span style="color:#f59e0b; font-size:11px;">点击右上角“设置 FRED Key”加载</span>';
-                });
-            }
-        }
-
+        // 页面加载后自动获取数据
         window.addEventListener('DOMContentLoaded', () => {
-            initFredData();
+            loadAllFredData();
         });
     </script>
 </body>
