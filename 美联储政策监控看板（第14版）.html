@@ -539,20 +539,29 @@
             const deltaHtml = v1 !== null ? ` <span style="font-size:10px; color:${delta < 0 ? '#4ade80' : '#f87171'};">(${delta > 0 ? '+' : ''}${delta})</span>` : '';
             el.innerHTML = `${(v0 / 1000).toFixed(0)}k <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
         }
+		
+		async function updateJolts() {
+			const el = document.getElementById('jolts-openings');
+			const obs = await fetchFredObservations('JTSJOL', 2);
+			if (!obs || obs.length === 0) { showDataError('jolts-openings'); return; }
+			const v0 = parseFloat(obs[0].value);
+			const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
 
-        async function updateJolts() {
-            const el = document.getElementById('jolts-openings');
-            const obs = await fetchFredObservations('JTSJOL', 2);
-            if (!obs || obs.length === 0) { showDataError('jolts-openings'); return; }
-            const v0 = parseFloat(obs[0].value);
-            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
-            const delta = v1 !== null ? Math.round(v0 - v1) : 0;
-            const deltaSign = delta >= 0 ? '+' : '';
-            const deltaColor = delta >= 0 ? '#4ade80' : '#f87171';
-            const deltaHtml = v1 !== null ? ` <span style="font-size:10px; color:${deltaColor};">(${deltaSign}${delta}k)</span>` : '';
-            el.innerHTML = `${Math.round(v0)}k${deltaHtml} <span class="data-meta">${formatDate(obs[0].date)}</span>`;
-        }
+			// 当前值：除以 1000 转成「百万」，保留 2 位小数
+			const currentM = (v0 / 1000).toFixed(2);
 
+			// 环比变化：保留 k 为单位显示
+			let deltaHtml = '';
+			if (v1 !== null && !isNaN(v1)) {
+				const deltaK = Math.round(v0 - v1);
+				const sign = deltaK >= 0 ? '+' : '';
+				const color = deltaK >= 0 ? '#4ade80' : '#f87171';
+				deltaHtml = ` <span style="font-size:10px; color:;">(k)</span>`;
+			}
+
+			el.innerHTML = `M <span class="data-meta"></span>`;
+		}
+		
         async function updateAvgHourlyEarnings() {
             const el = document.getElementById('avg-hourly-earnings');
             const obs = await fetchFredObservations('CES0500000003', 2);
