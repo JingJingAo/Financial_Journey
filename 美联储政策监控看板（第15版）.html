@@ -556,16 +556,18 @@
                 showDataError('initial-claims'); 
                 return; 
             }
-            const v0 = parseFloat(obs[0].value);           // FRED 已按千为单位
+            const v0 = parseFloat(obs[0].value);
             const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
-            // 直接使用 v0（已是千单位），显示为 k
-            let html = `${Math.round(v0)}k`;
-            if (v1 !== null) {
-                const delta = Math.round(v0 - v1);
-                const color = delta < 0 ? '#4ade80' : '#f87171';
-                html += ` <span style="font-size:10px; color:${color};">(${delta > 0 ? '+' : ''}${delta})</span>`;
+            const currentK = Math.round(v0 / 1000);
+            let html = `k`;
+
+            if (v1 !== null && !isNaN(v1)) {
+                const deltaK = Math.round((v0 - v1) / 1000);  // 环比也要除1000
+                const sign = deltaK >= 0 ? '+' : ''; 
+                const color = deltaK < 0 ? '#4ade80' : '#f87171';  // 初请减少为利好(绿)
+                html += ` <span style="font-size:10px; color:;">(k)</span>`;
             }
-            html += ` <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+            html += ` <span class="data-meta"></span>`;
             el.innerHTML = html;
         }
 
