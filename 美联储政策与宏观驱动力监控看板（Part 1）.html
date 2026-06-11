@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美联储货币政策与宏观天平监控终端</title>
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --border-color: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-up: #ef4444; /* 通胀/加息压力红 */
+            --accent-down: #10b981; /* 就业支撑/降息绿 */
+            --accent-blue: #3b82f6; /* 联储中性蓝 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            padding: 20px;
+            line-height: 1.5;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        header h1 span {
+            font-size: 14px;
+            color: var(--accent-blue);
+            margin-left: 10px;
+            font-weight: normal;
+        }
+
+        .refresh-time {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* 布局网格 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* 模块一：核心基准利率与预期 */
+        .col-4 { grid-column: span 4; }
+        .col-8 { grid-column: span 8; }
+        .col-6 { grid-column: span 6; }
+        .col-12 { grid-column: span 12; }
+
+        .rate-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 10px 0;
+        }
+
+        .meta-list {
+            list-style: none;
+            font-size: 14px;
+        }
+
+        .meta-list li {
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .meta-list span.label { color: var(--text-secondary); }
+        .meta-list span.val { font-weight: 600; }
+
+        .btn-link {
+            display: inline-block;
+            background: var(--border-color);
+            color: var(--text-primary);
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .btn-link:hover { background: var(--accent-blue); }
+
+        /* 模块二：宏观天平布局 */
+        .balance-scale-container {
+            grid-column: span 12;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .scale-inflation { border-top: 4px solid var(--accent-up); }
+        .scale-employment { border-top: 4px solid var(--accent-down); }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            text-align: left;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th { color: var(--text-secondary); font-weight: 500; }
+        .trend-up { color: var(--accent-up); font-weight: 600; }
+        .trend-down { color: var(--accent-down); font-weight: 600; }
+
+        /* 嵌入组件容器 */
+        .widget-container {
+            width: 100%;
+            height: 380px;
+            border: none;
+            background: transparent;
+        }
+
+        /* 移动端适配 */
+        @media (max-width: 1024px) {
+            .col-4, .col-8, .col-6, .balance-scale-container {
+                grid-column: span 12;
+            }
+            .balance-scale-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>美联储行为与宏观驱动力视窗 <span>核心决策要素 (Part 1)</span></h1>
+        <div class="refresh-time">数据观察窗时刻 (本地): <span id="clock">加载中...</span></div>
+    </header>
+
+    <main class="dashboard-grid">
+
+        <!-- 1. 当前基准利率与会议锚点 -->
+        <section class="card col-4">
+            <div class="card-title">
+                <span>联邦基金目标利率 (FFR)</span>
+                <span style="color: var(--accent-blue); font-size: 12px;">实时锚定</span>
+            </div>
+            <div class="rate-value">3.50% - 3.75%</div>
+            <ul class="meta-list">
+                <li>
+                    <span class="label">当前政策周期阶段</span>
+                    <span class="val" style="color: var(--accent-down);">常规降息/常态化回归</span>
+                </li>
+                <li>
+                    <span class="label">下次 FOMC 决议时间</span>
+                    <span class="val" id="next-meeting">观察日历排期</span>
+                </li>
+                <li>
+                    <span class="label">官方声明/纪要直达</span>
+                    <span class="val">
+                        <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="btn-link">FOMC 官网 ↗</a>
+                    </span>
+                </li>
+            </ul>
+        </section>
+
+        <!-- 2. CME FedWatch 降息/加息概率观测器 (通过 <iframe> 引入 Investing 免费挂件) -->
+        <section class="card col-8">
+            <div class="card-title">
+                <span>市场前瞻：CME 利率预期概率分布</span>
+                <span style="color: var(--text-secondary); font-size: 12px;">透视市场与联储的定价预期差</span>
+            </div>
+            <!-- 使用 Investing 的美联储观测器挂件 -->
+            <iframe src="https://tw.investing.com/central-banks/fed-rate-monitor" class="widget-container" style="height: 140px; scrolling: no;"></iframe>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 5px; text-align: right;">
+                * 注：如上方挂件未完全显示，可直接点此查看 
+                <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" style="color:var(--accent-blue); text-decoration:none;">CME 官方原生终端 ↗</a>
+            </div>
+        </section>
+
+        <!-- 3. 宏观天平模块：通胀压力 vs 就业阻力 -->
+        <div class="balance-scale-container">
+            
+            <!-- 左盘：通胀压力 (决定利率下限/松手底线) -->
+            <section class="card scale-inflation">
+                <div class="card-title">
+                    <span>左盘：通胀硬约束 (Inflation Risks)</span>
+                    <span style="color: var(--accent-up); font-size: 12px;">影响：核心走高 → 迫使维持高利率</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>核心监控指标</th>
+                            <th>前值</th>
+                            <th>最新值</th>
+                            <th>市场预期 / 观察焦点</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>核心 PCE 物价指数 (MoM)</b></td>
+                            <td>0.2%</td>
+                            <td class="trend-up">0.2%</td>
+                            <td>联储第一政策锚，观察环比折年率是否稳定在 2.5% 以下</td>
+                        </tr>
+                        <tr>
+                            <td><b>核心 CPI 同比 (YoY)</b></td>
+                            <td>3.2%</td>
+                            <td class="trend-up">3.1%</td>
+                            <td>过滤食品能源后的核心通胀，体现消费者终端价格粘性</td>
+                        </tr>
+                        <tr>
+                            <td><b>平均时薪增速 (YoY)</b></td>
+                            <td>3.8%</td>
+                            <td>3.5%</td>
+                            <td>防范“工资-通胀螺旋”的关键，薪资不降通胀难下</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 右盘：就业阻力 (决定降息触发点/主动与被动属性) -->
+            <section class="card scale-employment">
+                <div class="card-title">
+                    <span>右盘：劳动力与增长阻力 (Growth Risks)</span>
+                    <span style="color: var(--accent-down); font-size: 12px;">影响：就业垮塌 → 逼迫联储拯救性降息</span>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>核心监控指标</th>
+                            <th>前值</th>
+                            <th>最新值</th>
+                            <th>大类资产映射逻辑</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>非农就业人口净增 (NFP)</b></td>
+                            <td>15.2万</td>
+                            <td class="trend-down">13.5万</td>
+                            <td>&lt; 10万人意味着动能衰竭；大宗商品承压，长债走牛</td>
+                        </tr>
+                        <tr>
+                            <td><b>失业率 (Unemployment)</b></td>
+                            <td>4.1%</td>
+                            <td class="trend-up">4.2%</td>
+                            <td>核心红线。若触发萨姆规则，市场将全面转向经济衰退定价</td>
+                        </tr>
+                        <tr>
+                            <td><b>ISM 制造业 PMI</b></td>
+                            <td>48.5</td>
+                            <td>47.8</td>
+                            <td>前瞻性经济景气度指标，50 荣枯线下方持续越久衰退概率越高</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+
+        <!-- 4. 实时全球宏观数据日历 -->
+        <section class="card col-12">
+            <div class="card-title">
+                <span>下期预估与宏观数据出炉时间表</span>
+                <span style="color: var(--accent-blue); font-size: 12px;">自动更新 · 仅限美国三星级核心重磅事件</span>
+            </div>
+            <!-- 嵌入 Investing.com 财经日历挂件，配置为仅显示重要数据 -->
+            <iframe src="https://sslecal2.investing.com?columns=container_brand,container_currency,container_importance,container_actual,container_forecast,container_previous&category=_employment,_inflation,_gdp,_centralBanks&importance=3&features=datepicker,timezone&countries=5&calType=week&timeZone=56&lang=6" width="100%" height="400" frameborder="0" allowtransparency="true" marginwidth="0" marginheight="0"></iframe>
+        </section>
+
+        <!-- 5. 长周期坐标轴：36年基准利率与美联储 QE/QT 资产负债表长周期图 -->
+        <section class="card col-12">
+            <div class="card-title">
+                <span>长周期坐标系：1990 - 2026 基金利率与资产负债表规模 (QE/QT) 对照</span>
+                <span style="color: var(--text-secondary); font-size: 12px;">源数据：圣路易斯联储 FRED 官方动态嵌入</span>
+            </div>
+            <!-- 动态载入 FRED 交互图表：包含有效联邦基金利率 (FEDFUNDS) 以及 联储总资产规模 (WALCL) -->
+            <!-- 这里使用标准的官方图表渲染，保证数据的永久自动更新 -->
+            <iframe src="https://fred.stlouisfed.org/graph/graph-landing.php?id=FEDFUNDS&width=100%&height=360" class="widget-container" style="height: 380px;"></iframe>
+            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--border-color); font-size: 13px; color: var(--text-secondary);">
+                <b>量化紧缩与宽松 (QE/QT) 追溯窗口：</b> 
+                若需专门透视美联储扩表/缩表绝对值，请跳转查看官方 
+                <a href="https://fred.stlouisfed.org/series/WALCL" target="_blank" style="color: var(--accent-blue); text-decoration: none; font-weight: bold;">美联储资产负债表总额 (WALCL) ↗</a>。
+                当斜率向上时意味着市场正获得源源不断的流动性注入（资产充裕），斜率向下（QT）则是流动性抽水。
+            </div>
+        </section>
+
+        <!-- 6. 联储态度晴雨表与前瞻指引 -->
+        <section class="card col-12">
+            <div class="card-title">
+                <span>前瞻指引修正案：联储官员态度及点阵图 (Dot Plot) 观测</span>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; font-size: 14px;">
+                <div style="background: rgba(255,255,255,0.02); padding: 15px; border-radius: 6px;">
+                    <h4 style="color: var(--accent-blue); margin-bottom: 10px;">三季度鹰/鸽势力分布</h4>
+                    <ul class="meta-list">
+                        <li><span class="label">极端鹰派 (支持加息抑制通胀)</span><span class="val" style="color:var(--accent-up);">0人</span></li>
+                        <li><span class="label">温和偏鹰 (主张维持高利率)</span><span class="val">2人</span></li>
+                        <li><span class="label">中性/务实派 (数据驱动)</span><span class="val" style="color:var(--text-primary);">6人</span></li>
+                        <li><span class="label">温和偏鸽 (关切就业及软着陆)</span><span class="val" style="color:var(--accent-down);">4人</span></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 10px;">宏观逻辑核心推论（如何指导投资？）</h4>
+                    <p style="color: var(--text-secondary); margin-bottom: 10px;">
+                        1. <b>若通胀下行 + 就业平稳 (完美软着陆)：</b> 美联储将执行“预防性降息”。此时债市小幅走牛，美股估值抬升（尤其是成长股/纳指），黄金震荡上行。
+                    </p>
+                    <p style="color: var(--text-secondary); margin-bottom: 10px;">
+                        2. <b>若通胀反复 + 就业强劲 (不着陆/滞胀风险)：</b> 美联储被迫拉长高利率平台期。此时美债收益率反弹，强美元压制一切商品，股市尤其是高估值科技股面临杀估值压力。
+                    </p>
+                    <p style="color: var(--text-secondary);">
+                        3. <b>若通胀暴跌 + 失业率飙升 (硬着陆/衰退)：</b> 美联储将启动“恐慌性暴降”。届时大宗商品和股市会出现流动性通缩暴跌，<b>长期国债与黄金将成为唯一的避风港</b>。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // 本地实时时钟脚本
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.getFullYear() + '-' + 
+                               String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(now.getDate()).padStart(2, '0') + ' ' + 
+                               String(now.getHours()).padStart(2, '0') + ':' + 
+                               String(now.getMinutes()).padStart(2, '0') + ':' + 
+                               String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>
