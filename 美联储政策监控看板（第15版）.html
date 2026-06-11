@@ -552,9 +552,13 @@
         async function updateInitialClaims() {
             const el = document.getElementById('initial-claims');
             const obs = await fetchFredObservations('ICSA', 2);
-            if (!obs || obs.length === 0) { showDataError('initial-claims'); return; }
-            const v0 = parseFloat(obs[0].value);
+            if (!obs || obs.length === 0) { 
+                showDataError('initial-claims'); 
+                return; 
+            }
+            const v0 = parseFloat(obs[0].value);           // FRED 已按千为单位
             const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            // 直接使用 v0（已是千单位），显示为 k
             let html = `${Math.round(v0)}k`;
             if (v1 !== null) {
                 const delta = Math.round(v0 - v1);
