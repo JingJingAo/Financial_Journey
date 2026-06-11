@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美联储决策框架 + 数据入口 (v6.9 单位优化版)</title>
+    <style>
+        :root {
+            --bg-main: #0b0f19;
+            --bg-card: #131a2c;
+            --border-color: #222f47;
+            --text-primary: #f1f5f9;
+            --text-secondary: #64748b;
+            --accent-up: #ef4444;
+            --accent-down: #10b981;
+            --accent-blue: #3b82f6;
+            --accent-gold: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg-main);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            line-height: 1.55;
+        }
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-bottom: 12px; border-bottom: 2px solid var(--border-color); margin-bottom: 16px;
+            flex-wrap: wrap; gap: 10px;
+        }
+        .header h1 { font-size: 21px; font-weight: 700; }
+        .live-status { font-size: 12.5px; color: var(--text-secondary); }
+        .disclaimer {
+            background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.25);
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            margin-bottom: 16px;
+            color: #fbbf24;
+            line-height: 1.5;
+        }
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 18px;
+        }
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 13px;
+        }
+        .col-4 { grid-column: span 4; }
+        .col-5 { grid-column: span 5; }
+        .col-6 { grid-column: span 6; }
+        .col-7 { grid-column: span 7; }
+        .col-12 { grid-column: span 12; }
+        
+        .scale-inflation { border: 2px solid #ef4444; box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.15); }
+        .scale-employment { border: 2px solid #10b981; box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.15); }
+        .scale-fed { border-top: 4px solid #3b82f6; }
+
+        .section-title {
+            font-size: 13.5px;
+            font-weight: 600;
+            margin-bottom: 7px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .live-link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-blue);
+            color: white;
+            padding: 7px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 12.5px;
+            transition: all 0.2s;
+            margin-top: 5px;
+        }
+        .live-link-btn:hover { background: #2563eb; transform: translateY(-1px); }
+
+        .countdown-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px dashed rgba(245,158,11,0.4);
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            margin: 8px 0;
+        }
+        #countdown-timer {
+            font-size: 19px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            font-family: monospace;
+        }
+
+        .framework-note {
+            font-size: 11.5px;
+            color: var(--text-secondary);
+            line-height: 1.45;
+            margin-top: 6px;
+        }
+
+        .tradingview-container { border-radius: 6px; overflow: hidden; }
+
+        .right-sidebar { display: flex; flex-direction: column; gap: 14px; }
+
+        .compact-card .section-title { font-size: 13px; margin-bottom: 5px; padding-bottom: 4px; }
+        .compact-card p { font-size: 12px; margin-bottom: 5px; color: #94a3b8; }
+        .compact-card .live-link-btn { padding: 6px 11px; font-size: 12px; margin-top: 3px; }
+
+        .data-snapshot {
+            background: rgba(15, 23, 42, 0.55);
+            border-radius: 6px;
+            padding: 9px 11px;
+            margin: 8px 0 4px;
+            font-size: 12px;
+        }
+        .data-snapshot .section-title {
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #94a3b8;
+            border: none;
+            margin-bottom: 5px;
+            padding-bottom: 0;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 2.5px 0;
+            border-top: 1px solid rgba(148, 163, 184, 0.12);
+            gap: 8px;
+        }
+        .data-row:first-child { border-top: none; }
+        .data-label { color: #94a3b8; flex-shrink: 0; min-width: 98px; }
+        .data-value {
+            font-weight: 700;
+            color: #e2e8f0;
+            font-family: monospace;
+            text-align: right;
+            line-height: 1.3;
+        }
+        .data-meta { font-size: 10px; color: #64748b; display: block; margin-top: 1px; }
+        .data-loading { color: #64748b; font-style: italic; }
+        .current-rate {
+            font-size: 12.5px;
+            background: rgba(15,23,42,0.5);
+            padding: 5px 9px;
+            border-radius: 4px;
+            margin-top: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .fred-link { color: #60a5fa; text-decoration: none; font-size: 11.5px; }
+        .fred-link:hover { text-decoration: underline; }
+
+        .calendar-note {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-top: 6px;
+            line-height: 1.4;
+        }
+
+        @media (max-width: 1024px) {
+            .col-4, .col-5, .col-6, .col-7, .col-12 { grid-column: span 12; }
+            .right-sidebar { gap: 12px; }
+            .header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>美联储货币政策决策框架 + 数据入口</h1>
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+            <div class="live-status">
+                当前时间: <span id="clock"></span><br>
+                <span style="color:#34d399;">● 紧凑版 v6.9 单位优化版</span>
+            </div>
+            <button onclick="loadAllFredData()" class="fred-key-btn" style="background:#059669; color:white; border-color:#059669;">⟳ 刷新数据</button>
+        </div>
+    </div>
+
+    <div class="disclaimer">
+        <strong>说明：</strong> 数据通过 Cloudflare Workers 安全代理获取（Key 不暴露在前端）。核心数据对利率走向影响最大；整体 PCE/CPI 用于对比核心。右下板块多为官方跳转。
+    </div>
+
+    <div class="dashboard-grid">
+
+        <!-- 左盘 -->
+        <div class="card col-4 scale-inflation">
+            <div class="section-title">
+                <span>左盘：通胀约束框架</span>
+                <span style="color:#ef4444; font-size:11px;">硬刹车逻辑</span>
+            </div>
+            <p style="font-size:12.5px; line-height:1.45; margin-bottom:6px;">
+                通胀是降息的硬约束。只要核心通胀未 convincingly 向2%目标收敛，联储就难以大幅打开降息空间。
+            </p>
+
+            <div class="data-snapshot">
+                <div class="section-title">最新关键数据 (FRED) — 当前 | 上期对比</div>
+                <div class="data-row">
+                    <span class="data-label">核心 PCE 环比折年率</span>
+                    <span id="pce-mom-ann" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">核心 CPI 指数</span>
+                    <span id="cpi-core" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">整体 PCE 指数</span>
+                    <span id="pce-headline" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">整体 CPI 指数</span>
+                    <span id="cpi-headline" class="data-value data-loading">加载中...</span>
+                </div>
+            </div>
+
+            <a href="https://fred.stlouisfed.org/series/PCEPILFE" target="_blank" class="live-link-btn">→ 核心 PCE (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/CPILFESL" target="_blank" class="live-link-btn" style="background:#334155;">→ 核心 CPI (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/PCEPI" target="_blank" class="live-link-btn" style="background:#334155;">→ 整体 PCE (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/CPIAUCSL" target="_blank" class="live-link-btn" style="background:#334155;">→ 整体 CPI (FRED)</a>
+            
+            <div class="framework-note">
+                核心 vs 整体对比有助于判断通胀广度。ISM 制造业 PMI 官方每月发布（见日历）。
+            </div>
+        </div>
+
+        <!-- 中间 FOMC -->
+        <div class="card col-4 scale-fed">
+            <div class="section-title">
+                <span>美联储政策利率基准 (FFR)</span>
+            </div>
+            
+            <div style="text-align:center; margin:6px 0 10px;">
+                <div style="font-size:11.5px; color:#64748b;">当前目标区间（参考）</div>
+                <div style="font-size:25px; font-weight:800; color:#fff; margin:1px 0;">3.50% - 3.75%</div>
+                <div style="font-size:11px; color:#64748b;">（以最新 FOMC 声明为准）</div>
+            </div>
+
+            <div class="countdown-box">
+                <div style="font-size:11.5px; margin-bottom:3px;">距离下一次 FOMC 利率决议</div>
+                <div id="countdown-timer">计算中...</div>
+                <div id="meeting-date" style="font-size:10.5px; color:#64748b; margin-top:3px;"></div>
+                <div style="font-size:10px; color:#94a3b8; margin-top:4px;">美国东部时间 (ET / UTC-4 或 UTC-5)</div>
+            </div>
+
+            <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="live-link-btn" style="width:100%; justify-content:center;">
+                → FOMC 官方议息日程表
+            </a>
+            
+            <div class="framework-note" style="margin-top:6px;">
+                倒计时自动指向下一个未发生会议。会议后自动切换。
+            </div>
+        </div>
+
+        <!-- 右盘 -->
+        <div class="card col-4 scale-employment">
+            <div class="section-title">
+                <span>右盘：就业与增长阻力框架</span>
+                <span style="color:#10b981; font-size:11px;">发动机逻辑</span>
+            </div>
+            <p style="font-size:12.5px; line-height:1.45; margin-bottom:6px;">
+                就业是政策转向的重要发动机。若失业率持续显著上升并超出软着陆预期，联储倾向于启动防御性降息。
+            </p>
+
+            <div class="data-snapshot">
+                <div class="section-title">最新关键数据 (FRED) — 当前 | 上期对比（对利率影响最大）</div>
+                <div class="data-row">
+                    <span class="data-label">非农就业新增 (MoM)</span>
+                    <span id="nonfarm-payrolls" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">失业率 (UNRATE)</span>
+                    <span id="unrate" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">初请失业金 (ICSA)</span>
+                    <span id="initial-claims" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">JOLTS 职位空缺</span>
+                    <span id="jolts-openings" class="data-value data-loading">加载中...</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">平均时薪 (Total Private)</span>
+                    <span id="avg-hourly-earnings" class="data-value data-loading">加载中...</span>
+                </div>
+            </div>
+
+            <a href="https://fred.stlouisfed.org/series/PAYEMS" target="_blank" class="live-link-btn">→ 非农就业 (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/UNRATE" target="_blank" class="live-link-btn" style="background:#334155;">→ 失业率 (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/ICSA" target="_blank" class="live-link-btn" style="background:#334155;">→ 初请失业金 (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/JTSJOL" target="_blank" class="live-link-btn" style="background:#334155;">→ JOLTS 职位空缺 (FRED)</a>
+            <a href="https://fred.stlouisfed.org/series/CES0500000003" target="_blank" class="live-link-btn" style="background:#334155;">→ 平均时薪 (FRED)</a>
+            
+            <div class="framework-note">
+                非农、失业率、初请、JOLTS 是判断就业最核心指标。ISM 制造业 PMI 官方每月发布（见日历）。
+            </div>
+        </div>
+
+        <!-- 日历 -->
+        <div class="card col-7">
+            <div class="section-title">
+                <span>重磅宏观数据出炉日历</span>
+            </div>
+            <div class="tradingview-container">
+                <div class="tradingview-widget-container">
+                    <div class="tradingview-widget-container__widget"></div>
+                    <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-events.js" async>
+                    {
+                        "colorTheme": "dark",
+                        "isWidescreen": false,
+                        "width": "100%",
+                        "height": "400",
+                        "importanceFilter": "1",
+                        "countryFilter": "us"
+                    }
+                    </script>
+                </div>
+            </div>
+            <div class="calendar-note">
+                来源：TradingView。典型数据列顺序通常为：<strong>Actual（实际值）</strong> | <strong>Forecast（市场预测）</strong> | <strong>Prior（前值）</strong>。<br>
+                鼠标悬停或点击具体事件可查看完整详情。
+            </div>
+        </div>
+
+        <!-- 右侧三个板块 -->
+        <div class="col-5 right-sidebar">
+
+            <div class="card compact-card">
+                <div class="section-title">
+                    <span>CME FedWatch 利率预期</span>
+                    <span style="color:#64748b; font-size:10.5px;">市场隐含概率</span>
+                </div>
+                <p>30天联邦基金期货隐含的下一次FOMC定价（最权威市场预期）</p>
+                <a href="https://www.cmegroup.com/markets/interest-rates/cme-fedwatch-tool.html" target="_blank" class="live-link-btn" style="width:100%; justify-content:center; background:#059669;">
+                    打开 CME FedWatch 工具 ↗
+                </a>
+                <div style="margin-top:3px; font-size:10.5px; color:#64748b;">
+                    参考：<a href="https://cn.investing.com/central-banks/fed-rate-monitor" target="_blank" style="color:#60a5fa;">英为财情</a>
+                </div>
+            </div>
+
+            <div class="card compact-card">
+                <div class="section-title">
+                    <span>FOMC 官员态度与点阵图</span>
+                </div>
+                <p>FOMC决策高度数据驱动。中立务实派主导，单月数据超预期易引发立场调整。</p>
+                <a href="https://www.federalreserve.gov/monetarypolicy/fomcprojtabl.htm" target="_blank" class="live-link-btn" style="margin-bottom:3px;">→ 最新点阵图 (SEP)</a>
+                <a href="https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm" target="_blank" class="live-link-btn" style="background:#334155;">→ FOMC 成员名单与声明</a>
+            </div>
+
+            <div class="card compact-card">
+                <div class="section-title">
+                    <span>长周期利率坐标系（1990-2026）</span>
+                </div>
+                <p>过去36年联邦基金利率完整走势 + NBER衰退阴影。利率拐点与大牛市/泡沫破裂高度相关。</p>
+                
+                <div class="current-rate">
+                    <span style="color:#94a3b8;">当前有效联邦基金利率</span>
+                    <span id="fed-funds-effective" style="font-weight:700; color:#e2e8f0; font-family:monospace;">加载中...</span>
+                </div>
+
+                <a href="https://fred.stlouisfed.org/series/FEDFUNDS" target="_blank" class="live-link-btn">打开 FRED 官方长周期图表 ↗</a>
+                <div style="margin-top:3px; font-size:10.5px; color:#64748b;">
+                    补充：<a href="https://fred.stlouisfed.org/series/WALCL" target="_blank" style="color:#60a5fa;">美联储资产负债表 WALCL</a>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // ==================== 配置区（必须修改） ====================
+        const FRED_PROXY_BASE = 'https://fred-proxy.jing-aou.workers.dev';
+
+        // 实时时钟
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + 
+                String(now.getDate()).padStart(2,'0') + ' ' + 
+                String(now.getHours()).padStart(2,'0') + ':' + 
+                String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // FOMC 倒计时（美国东部时间）
+        const fomcMeetings = [
+            { date: new Date("2026-06-17T14:00:00-05:00"), label: "2026年06月17日 (周三)" },
+            { date: new Date("2026-07-29T14:00:00-05:00"), label: "2026年07月29日 (周三)" },
+            { date: new Date("2026-09-16T14:00:00-05:00"), label: "2026年09月16日 (周三)" },
+            { date: new Date("2026-10-28T14:00:00-05:00"), label: "2026年10月28日 (周三)" },
+            { date: new Date("2026-12-09T14:00:00-05:00"), label: "2026年12月09日 (周三)" }
+        ];
+
+        function updateCountdown() {
+            const now = new Date();
+            let nextMeeting = null;
+            for (let meeting of fomcMeetings) {
+                if (meeting.date > now) { nextMeeting = meeting; break; }
+            }
+            const timerEl = document.getElementById('countdown-timer');
+            const dateEl = document.getElementById('meeting-date');
+            if (!nextMeeting) {
+                timerEl.textContent = "本年度排期已结束";
+                dateEl.textContent = "请更新会议列表";
+                return;
+            }
+            dateEl.textContent = "目标会议: " + nextMeeting.label;
+            const diff = nextMeeting.date - now;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            timerEl.textContent = `${days}天 ${hours}小时 ${mins}分钟`;
+        }
+        setInterval(updateCountdown, 60000);
+        updateCountdown();
+
+        // ==================== 数字格式化工具 ====================
+        function formatEmploymentChange(change) {
+            // 非农新增等月度变化，标准显示为 +172k
+            const sign = change >= 0 ? '+' : '';
+            return `${sign}${change}k`;
+        }
+
+        function formatJobLevelInMillions(valueInThousands) {
+            // JOLTS 等职位空缺，用百万显示更清晰
+            const millions = valueInThousands / 1000;
+            return millions.toFixed(1) + 'M';
+        }
+
+        function formatClaims(valueInThousands) {
+            // 初请失业金保持 k 单位
+            return Math.round(valueInThousands) + 'k';
+        }
+
+        // ==================== FRED 数据获取 ====================
+        async function fetchFredObservations(seriesId, limit = 2) {
+            if (!FRED_PROXY_BASE || FRED_PROXY_BASE.includes('YOUR-WORKER')) {
+                console.error('请先修改 FRED_PROXY_BASE 为你的 Workers 地址');
+                return null;
+            }
+            const url = `${FRED_PROXY_BASE}?series_id=${seriesId}&limit=${limit}`;
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (data.error_message) throw new Error(data.error_message);
+                return data.observations || [];
+            } catch (e) {
+                console.error('Proxy fetch error for', seriesId, e);
+                return null;
+            }
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+        }
+
+        function showDataLoading(ids) {
+            ids.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<span class="data-loading">加载中...</span>';
+            });
+        }
+
+        function showDataError(id, msg = '获取失败') {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = `<span style="color:#f87171; font-size:11px;">${msg}</span>`;
+        }
+
+        // ==================== 各个指标更新函数（已修正单位） ====================
+
+        // 核心 PCE 环比折年率
+        async function updatePceMomAnn() {
+            const el = document.getElementById('pce-mom-ann');
+            const obs = await fetchFredObservations('PCEPILFE', 2);
+            if (!obs || obs.length < 2) { showDataError('pce-mom-ann'); return; }
+            const v1 = parseFloat(obs[0].value);
+            const v0 = parseFloat(obs[1].value);
+            if (isNaN(v1) || isNaN(v0) || v0 === 0) { showDataError('pce-mom-ann', '数据异常'); return; }
+            const mom = (v1 / v0 - 1) * 100;
+            const annRate = (Math.pow(1 + mom / 100, 12) - 1) * 100;
+            el.innerHTML = `${annRate.toFixed(2)}% <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+        }
+
+        // 核心 CPI
+        async function updateCpiCore() {
+            const el = document.getElementById('cpi-core');
+            const obs = await fetchFredObservations('CPILFESL', 2);
+            if (!obs || obs.length === 0) { showDataError('cpi-core'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            const delta = v1 !== null ? (v0 - v1).toFixed(1) : '';
+            const deltaHtml = v1 !== null ? ` <span style="font-size:10px; color:${v0 > v1 ? '#f87171' : '#4ade80'};">(${v0 > v1 ? '+' : ''}${delta})</span>` : '';
+            el.innerHTML = `${v0.toFixed(1)} <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
+        }
+
+        // 整体 PCE
+        async function updatePceHeadline() {
+            const el = document.getElementById('pce-headline');
+            const obs = await fetchFredObservations('PCEPI', 2);
+            if (!obs || obs.length === 0) { showDataError('pce-headline'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            const delta = v1 !== null ? (v0 - v1).toFixed(1) : '';
+            const deltaHtml = v1 !== null ? ` <span style="font-size:10px; color:${v0 > v1 ? '#f87171' : '#4ade80'};">(${v0 > v1 ? '+' : ''}${delta})</span>` : '';
+            el.innerHTML = `${v0.toFixed(1)} <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
+        }
+
+        // 整体 CPI
+        async function updateCpiHeadline() {
+            const el = document.getElementById('cpi-headline');
+            const obs = await fetchFredObservations('CPIAUCSL', 2);
+            if (!obs || obs.length === 0) { showDataError('cpi-headline'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            const delta = v1 !== null ? (v0 - v1).toFixed(1) : '';
+            const deltaHtml = v1 !== null ? ` <span style="font-size:10px; color:${v0 > v1 ? '#f87171' : '#4ade80'};">(${v0 > v1 ? '+' : ''}${delta})</span>` : '';
+            el.innerHTML = `${v0.toFixed(1)} <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
+        }
+
+        // 非农就业新增（月度变化，标准用 k）
+        async function updateNonfarmPayrolls() {
+            const el = document.getElementById('nonfarm-payrolls');
+            const obs = await fetchFredObservations('PAYEMS', 2);
+            if (!obs || obs.length < 2) { showDataError('nonfarm-payrolls'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = parseFloat(obs[1].value);
+            const change = Math.round(v0 - v1);
+            const formatted = formatEmploymentChange(change);
+            el.innerHTML = `${formatted} <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+        }
+
+        // 初请失业金（用 k）
+        async function updateInitialClaims() {
+            const el = document.getElementById('initial-claims');
+            const obs = await fetchFredObservations('ICSA', 2);
+            if (!obs || obs.length === 0) { showDataError('initial-claims'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            const formatted = formatClaims(v0);
+            let deltaHtml = '';
+            if (v1 !== null) {
+                const delta = Math.round(v0 - v1);
+                deltaHtml = ` <span style="font-size:10px; color:${delta < 0 ? '#4ade80' : '#f87171'};">(${delta > 0 ? '+' : ''}${delta})</span>`;
+            }
+            el.innerHTML = `${formatted}${deltaHtml} <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+        }
+
+        // JOLTS 职位空缺（改用 M 单位，更清晰）
+        async function updateJolts() {
+            const el = document.getElementById('jolts-openings');
+            const obs = await fetchFredObservations('JTSJOL', 2);
+            if (!obs || obs.length === 0) { showDataError('jolts-openings'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            const formatted = formatJobLevelInMillions(v0);
+            let deltaHtml = '';
+            if (v1 !== null) {
+                const deltaM = ((v0 - v1) / 1000).toFixed(1);
+                deltaHtml = ` <span style="font-size:10px; color:${v0 > v1 ? '#4ade80' : '#f87171'};">(${v0 > v1 ? '+' : ''}${deltaM}M)</span>`;
+            }
+            el.innerHTML = `${formatted}${deltaHtml} <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+        }
+
+        // 平均时薪
+        async function updateAvgHourlyEarnings() {
+            const el = document.getElementById('avg-hourly-earnings');
+            const obs = await fetchFredObservations('CES0500000003', 2);
+            if (!obs || obs.length < 1) { showDataError('avg-hourly-earnings'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            let html = `$${v0.toFixed(2)}`;
+            if (v1 !== null && v1 !== 0) {
+                const mom = ((v0 - v1) / v1) * 100;
+                const momColor = mom >= 0 ? '#f87171' : '#4ade80';
+                html += ` <span style="font-size:10px; color:${momColor};">${mom >= 0 ? '+' : ''}${mom.toFixed(2)}% MoM</span>`;
+            }
+            html += ` <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+            el.innerHTML = html;
+        }
+
+        // 失业率
+        async function updateUnrate() {
+            const el = document.getElementById('unrate');
+            const obs = await fetchFredObservations('UNRATE', 2);
+            if (!obs || obs.length === 0) { showDataError('unrate'); return; }
+            const v0 = parseFloat(obs[0].value);
+            const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            const delta = v1 !== null ? (v0 - v1).toFixed(1) : '';
+            const deltaHtml = v1 !== null ? ` <span style="font-size:10px; color:${v0 > v1 ? '#f87171' : '#4ade80'};">(${v0 > v1 ? '+' : ''}${delta})</span>` : '';
+            el.innerHTML = `${v0.toFixed(1)}% <span class="data-meta">${formatDate(obs[0].date)}${deltaHtml}</span>`;
+        }
+
+        // 当前有效联邦基金利率
+        async function updateFedFundsEffective() {
+            const el = document.getElementById('fed-funds-effective');
+            const obs = await fetchFredObservations('FEDFUNDS', 1);
+            if (!obs || obs.length === 0) {
+                if (el) el.innerHTML = '<span style="color:#f87171;">暂无</span>';
+                return;
+            }
+            const val = parseFloat(obs[0].value);
+            if (el) el.innerHTML = `${val.toFixed(2)}% <span style="font-size:10px; color:#64748b;">(${formatDate(obs[0].date)})</span>`;
+        }
+
+        // 加载所有数据
+        async function loadAllFredData() {
+            const dataIds = ['pce-mom-ann', 'cpi-core', 'pce-headline', 'cpi-headline', 'nonfarm-payrolls', 'initial-claims', 'jolts-openings', 'avg-hourly-earnings', 'unrate', 'fed-funds-effective'];
+            showDataLoading(dataIds);
+
+            await Promise.all([
+                updatePceMomAnn(),
+                updateCpiCore(),
+                updatePceHeadline(),
+                updateCpiHeadline(),
+                updateNonfarmPayrolls(),
+                updateInitialClaims(),
+                updateJolts(),
+                updateAvgHourlyEarnings(),
+                updateUnrate(),
+                updateFedFundsEffective()
+            ]);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAllFredData();
+        });
+    </script>
+</body>
+</html>
+``` 
+
+**单位修改说明（已优化）：**
+
+- **非农就业新增 (MoM)**: `+172k`（标准月度变化单位，肉眼友好）
+- **JOLTS 职位空缺**: `8.0M`（改用百万单位，不再是 8000k）
+- **初请失业金**: `212k`（保持 k 单位，数值合理）
+- 其他指标保持原有合理单位
+
+现在数据看起来更专业、易读了。把 `FRED_PROXY_BASE` 改成你的 Workers 地址后直接使用即可。需要再调整任何地方随时说！
