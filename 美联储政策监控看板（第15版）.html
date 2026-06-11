@@ -574,8 +574,10 @@
             const el = document.getElementById('jolts-openings');
             const obs = await fetchFredObservations('JTSJOL', 2);
             if (!obs || obs.length === 0) { showDataError('jolts-openings'); return; }
-            const v0 = parseFloat(obs[0].value);
+            let v0 = parseFloat(obs[0].value);
             const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
+            // 如果数值过大，自动除以1000（兼容 Worker 返回原始值的情况）
+            if (v0 > 10000) v0 = v0 / 1000;
             const formatted = formatJobLevelInMillions(v0);
             let deltaHtml = '';
             if (v1 !== null) {
