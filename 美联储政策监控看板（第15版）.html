@@ -556,7 +556,6 @@
             const v0 = parseFloat(obs[0].value);
             const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
             let html = `${Math.round(v0)}k`;
-
             if (v1 !== null) {
                 const delta = Math.round(v0 - v1);
                 const color = delta < 0 ? '#4ade80' : '#f87171';
