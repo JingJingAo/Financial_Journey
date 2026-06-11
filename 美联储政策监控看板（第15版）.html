@@ -555,13 +555,15 @@
             if (!obs || obs.length === 0) { showDataError('initial-claims'); return; }
             const v0 = parseFloat(obs[0].value);
             const v1 = obs.length > 1 ? parseFloat(obs[1].value) : null;
-            const formatted = formatClaims(v0);
-            let deltaHtml = '';
+            let html = `${Math.round(v0)}k`;
+
             if (v1 !== null) {
                 const delta = Math.round(v0 - v1);
-                deltaHtml = ` <span style="font-size:10px; color:${delta < 0 ? '#4ade80' : '#f87171'};">(${delta > 0 ? '+' : ''}${delta})</span>`;
+                const color = delta < 0 ? '#4ade80' : '#f87171';
+                html += ` <span style="font-size:10px; color:${color};">(${delta > 0 ? '+' : ''}${delta})</span>`;
             }
-            el.innerHTML = `${formatted}${deltaHtml} <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+            html += ` <span class="data-meta">${formatDate(obs[0].date)}</span>`;
+            el.innerHTML = html;
         }
 
         // JOLTS 职位空缺（改用 M 单位，更清晰）
