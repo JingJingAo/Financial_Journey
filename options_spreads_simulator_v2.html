@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFA Level III Option Spreads Professional Terminal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#1e293b',
+                            950: '#0f172a',
+                        },
+                        brand: {
+                            50: '#f0fdf4',
+                            500: '#10b981', // emerald
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        accent: {
+                            500: '#3b82f6', // royal blue
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Modernized elegant range slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            height: 6px;
+        }
+        
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: #e2e8f0;
+            height: 5px;
+            border-radius: 9999px;
+            transition: background 0.15s ease;
+        }
+        .dark input[type="range"]::-webkit-slider-runnable-track {
+            background: #334155;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -5px;
+            background-color: #3b82f6;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.4), 0 2px 4px -2px rgba(59, 130, 246, 0.4);
+            transition: transform 0.1s ease, background-color 0.1s ease;
+        }
+        .dark input[type="range"]::-webkit-slider-thumb {
+            background-color: #60a5fa;
+            box-shadow: 0 4px 10px rgba(96, 165, 250, 0.3);
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Hide default number input arrows if we provide custom stepper */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Custom scrollbar for terminal dashboard */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="bg-[#f8fafc] dark:bg-[#090d16] text-slate-900 dark:text-slate-100 min-h-screen p-3 md:p-6 transition-colors duration-200">
+
+    <div class="max-w-7xl mx-auto flex flex-col gap-5">
+        
+        <!-- Header / Terminal Navbar -->
+        <header class="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 transition-colors">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl text-blue-600 dark:text-blue-400">
+                    <!-- Elegant Financial Analytics Icon -->
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-400 rounded-md">CFA L3 Specialist</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-tight text-slate-800 dark:text-white mt-0.5">Options Spreads Terminal</h1>
+                </div>
+            </div>
+            
+            <!-- Controls & Theme -->
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <button onclick="resetToDefaults()" class="w-full md:w-auto flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition duration-150 border border-slate-200/50 dark:border-slate-700/50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18.5"/></svg>
+                    重置数据
+                </button>
+                <button onclick="toggleDarkMode()" class="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl transition duration-150 border border-slate-200/50 dark:border-slate-700/50" aria-label="Toggle Dark Mode">
+                    <svg id="theme-icon-sun" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.364l-.707-.707M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <svg id="theme-icon-moon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Terminal Dashboard -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            
+            <!-- Sidebar Controls (5 cols) -->
+            <section class="lg:col-span-5 flex flex-col gap-5">
+                
+                <!-- Strategy Hub Panel -->
+                <div class="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col gap-4">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Strategy Selection</span>
+                        <h2 class="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">选择期权构建策略</h2>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="switchStrategy('bull_call')" id="tab-bull_call" class="group flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative overflow-hidden">
+                            <span class="text-sm font-bold block">牛市看涨</span>
+                            <span class="text-[10px] text-slate-400 group-hover:text-slate-300">Bull Call (Debit)</span>
+                            <span class="absolute right-1.5 top-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 opacity-60" title="Debit Strategy"></span>
+                        </button>
+                        <button onclick="switchStrategy('bull_put')" id="tab-bull_put" class="group flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative overflow-hidden">
+                            <span class="text-sm font-bold block">牛市看跌</span>
+                            <span class="text-[10px] text-slate-400 group-hover:text-slate-300">Bull Put (Credit)</span>
+                            <span class="absolute right-1.5 top-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-60" title="Credit Strategy"></span>
+                        </button>
+                        <button onclick="switchStrategy('bear_put')" id="tab-bear_put" class="group flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative overflow-hidden">
+                            <span class="text-sm font-bold block">熊市看跌</span>
+                            <span class="text-[10px] text-slate-400 group-hover:text-slate-300">Bear Put (Debit)</span>
+                            <span class="absolute right-1.5 top-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 opacity-60" title="Debit Strategy"></span>
+                        </button>
+                        <button onclick="switchStrategy('bear_call')" id="tab-bear_call" class="group flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative overflow-hidden">
+                            <span class="text-sm font-bold block">熊市看涨</span>
+                            <span class="text-[10px] text-slate-400 group-hover:text-slate-300">Bear Call (Credit)</span>
+                            <span class="absolute right-1.5 top-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-60" title="Credit Strategy"></span>
+                        </button>
+                    </div>
+
+                    <!-- Market Bias / Quick Presets -->
+                    <div class="border-t border-slate-100 dark:border-slate-800/60 pt-3">
+                        <span class="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider block mb-2">一键设置典型场景</span>
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="applyPreset('standard')" class="px-2 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 transition">标准平衡</button>
+                            <button onclick="applyPreset('narrow')" class="px-2 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 transition">温和区间</button>
+                            <button onclick="applyPreset('deep_itm')" class="px-2 py-1.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-300 border border-slate-200/40 dark:border-slate-700/40 transition">深度防御</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameters Sliders & Inputs -->
+                <div class="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col gap-5">
+                    <div>
+                        <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Dynamic Parameters</span>
+                        <h2 class="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">高级定价变量调控</h2>
+                    </div>
+
+                    <!-- Underling Asset S_T -->
+                    <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>标的到期价格 (S_T)
+                            </span>
+                            <div class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                <button onclick="adjustValue('st', -1)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">-</button>
+                                <input type="number" id="st_val" onchange="syncInput('st', this.value)" class="w-12 text-center text-xs font-mono font-bold bg-transparent border-0 focus:ring-0 p-0 text-blue-500">
+                                <button onclick="adjustValue('st', 1)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">+</button>
+                            </div>
+                        </div>
+                        <input type="range" id="st" min="40" max="160" step="1" class="w-full" oninput="syncSlider('st', this.value)">
+                    </div>
+
+                    <!-- Strike 1 (K1) -->
+                    <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>低行权价 (K₁)
+                            </span>
+                            <div class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                <button onclick="adjustValue('k1', -1)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">-</button>
+                                <input type="number" id="k1_val" onchange="syncInput('k1', this.value)" class="w-12 text-center text-xs font-mono font-bold bg-transparent border-0 focus:ring-0 p-0">
+                                <button onclick="adjustValue('k1', 1)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">+</button>
+                            </div>
+                        </div>
+                        <input type="range" id="k1" min="50" max="110" step="1" class="w-full" oninput="syncSlider('k1', this.value)">
+                    </div>
+
+                    <!-- Strike 2 (K2) -->
+                    <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>高行权价 (K₂)
+                            </span>
+                            <div class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                <button onclick="adjustValue('k2', -1)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">-</button>
+                                <input type="number" id="k2_val" onchange="syncInput('k2', this.value)" class="w-12 text-center text-xs font-mono font-bold bg-transparent border-0 focus:ring-0 p-0">
+                                <button onclick="adjustValue('k2', 1)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">+</button>
+                            </div>
+                        </div>
+                        <input type="range" id="k2" min="100" max="150" step="1" class="w-full" oninput="syncSlider('k2', this.value)">
+                    </div>
+
+                    <!-- Premium 1 -->
+                    <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span id="pr1_label" class="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">低端期权费 (P₁)</span>
+                            <div class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                <button onclick="adjustValue('pr1', -0.5)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">-</button>
+                                <input type="number" id="pr1_val" onchange="syncInput('pr1', this.value)" class="w-12 text-center text-xs font-mono font-bold bg-transparent border-0 focus:ring-0 p-0" step="0.1">
+                                <button onclick="adjustValue('pr1', 0.5)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">+</button>
+                            </div>
+                        </div>
+                        <input type="range" id="pr1" min="0.5" max="30" step="0.1" class="w-full" oninput="syncSlider('pr1', this.value)">
+                    </div>
+
+                    <!-- Premium 2 -->
+                    <div class="bg-slate-50 dark:bg-slate-900/50 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/50 space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span id="pr2_label" class="text-xs font-bold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">高端期权费 (P₂)</span>
+                            <div class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-0.5 shadow-sm">
+                                <button onclick="adjustValue('pr2', -0.5)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">-</button>
+                                <input type="number" id="pr2_val" onchange="syncInput('pr2', this.value)" class="w-12 text-center text-xs font-mono font-bold bg-transparent border-0 focus:ring-0 p-0" step="0.1">
+                                <button onclick="adjustValue('pr2', 0.5)" class="w-5 h-5 flex items-center justify-center text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded font-bold">+</button>
+                            </div>
+                        </div>
+                        <input type="range" id="pr2" min="0.5" max="30" step="0.1" class="w-full" oninput="syncSlider('pr2', this.value)">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Main Interactive Display (7 cols) -->
+            <section class="lg:col-span-7 flex flex-col gap-5">
+                
+                <!-- Dashboard Metrics (Grid) -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-[#111827] p-4 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl flex flex-col justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Max Profit / 最大收益</span>
+                        <div id="metric-max-profit" class="text-lg md:text-xl font-bold font-mono text-emerald-500 dark:text-emerald-400 mt-2">--</div>
+                    </div>
+                    <div class="bg-white dark:bg-[#111827] p-4 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl flex flex-col justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Max Loss / 最大损失</span>
+                        <div id="metric-max-loss" class="text-lg md:text-xl font-bold font-mono text-rose-500 dark:text-rose-400 mt-2">--</div>
+                    </div>
+                    <div class="bg-white dark:bg-[#111827] p-4 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl flex flex-col justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Breakeven / 盈亏点</span>
+                        <div id="metric-breakeven" class="text-lg md:text-xl font-bold font-mono text-blue-500 dark:text-blue-400 mt-2">--</div>
+                    </div>
+                    <div class="bg-white dark:bg-[#111827] p-4 border border-slate-200/80 dark:border-slate-800/80 shadow-sm rounded-2xl flex flex-col justify-between">
+                        <span class="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Initial Capital 流向</span>
+                        <div id="metric-net-flow" class="text-xs font-bold font-mono mt-3">--</div>
+                    </div>
+                </div>
+
+                <!-- Primary Chart Canvas Card -->
+                <div class="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col gap-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Payoff Visualization</span>
+                            <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300 mt-0.5">到期损益曲线图</h3>
+                        </div>
+                        <div class="flex items-center gap-4 text-[11px] text-slate-400">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 bg-blue-500 inline-block"></span>S_T</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-0.5 border-t border-dashed border-slate-400 inline-block"></span>Strike Prices</span>
+                        </div>
+                    </div>
+                    
+                    <div class="relative bg-slate-50 dark:bg-slate-900/40 rounded-xl p-3 border border-slate-100 dark:border-slate-800/50 h-[320px]">
+                        <canvas id="payoffChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- CFA Level III Strategic Core Knowledge Insight Card -->
+                <div class="bg-white dark:bg-[#111827] rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm flex flex-col gap-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800/60 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="p-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-lg text-indigo-600 dark:text-indigo-400">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                            </span>
+                            <h4 id="card-strategy-name" class="font-bold text-slate-800 dark:text-slate-100 text-sm">--</h4>
+                        </div>
+                        <span id="metric-current-pl" class="text-xs font-semibold px-2.5 py-1 rounded-lg">--</span>
+                    </div>
+
+                    <!-- LaTeX Formula Display -->
+                    <div class="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-150 dark:border-slate-800/80 font-mono text-xs flex flex-col gap-1.5 text-indigo-600 dark:text-indigo-400">
+                        <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider block font-sans">Formula Breakdown</span>
+                        <div id="card-formula-text" class="truncate"></div>
+                    </div>
+
+                    <!-- Detailed Content -->
+                    <p id="card-desc" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed"></p>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Footer Terminal Note -->
+        <footer class="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-2 flex flex-col sm:flex-row justify-between items-center gap-2 px-2">
+            <span>Option Spreads Engine v2.0 • Powered by Chart.js & Tailwind CSS</span>
+            <span>CFA Level III Fixed Income & Derivatives Active Learning Note Tool</span>
+        </footer>
+    </div>
+
+    <script>
+        // State variables
+        let currentStrategy = 'bull_call';
+        let chart = null;
+
+        // Default parameters
+        const defaults = {
+            k1: 90,
+            k2: 110,
+            pr1: 15.0,
+            pr2: 5.0,
+            st: 100
+        };
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Apply default theme classes (Defaults to dark mode based on class="dark" in html)
+            const isDark = document.documentElement.classList.contains('dark');
+            updateThemeToggleUI(isDark);
+            resetToDefaults();
+        });
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            updateThemeToggleUI(isDark);
+            updateChartTheme();
+        }
+
+        function updateThemeToggleUI(isDark) {
+            const sunIcon = document.getElementById('theme-icon-sun');
+            const moonIcon = document.getElementById('theme-icon-moon');
+            if (isDark) {
+                sunIcon.classList.remove('hidden');
+                moonIcon.classList.add('hidden');
+            } else {
+                sunIcon.classList.add('hidden');
+                moonIcon.classList.remove('hidden');
+            }
+        }
+
+        function resetToDefaults() {
+            document.getElementById('k1').value = defaults.k1;
+            document.getElementById('k2').value = defaults.k2;
+            document.getElementById('st').value = defaults.st;
+            
+            if (currentStrategy.endsWith('call')) {
+                document.getElementById('pr1').value = 15.0;
+                document.getElementById('pr2').value = 5.0;
+            } else {
+                document.getElementById('pr1').value = 4.0;
+                document.getElementById('pr2').value = 18.0;
+            }
+
+            syncAllValues();
+            switchStrategy(currentStrategy);
+        }
+
+        function adjustValue(id, delta) {
+            const element = document.getElementById(id);
+            let val = parseFloat(element.value);
+            let step = parseFloat(element.step) || 1;
+            val += (delta * step);
+            // Cap inputs logically
+            val = Math.max(parseFloat(element.min) || 0, Math.min(parseFloat(element.max) || 200, val));
+            element.value = val;
+            syncSlider(id, val);
+        }
+
+        function switchStrategy(strategy) {
+            currentStrategy = strategy;
+            
+            let pr1 = parseFloat(document.getElementById('pr1').value);
+            let pr2 = parseFloat(document.getElementById('pr2').value);
+
+            if (strategy.endsWith('call')) {
+                if (pr1 <= pr2) {
+                    document.getElementById('pr1').value = 15.0;
+                    document.getElementById('pr2').value = 5.0;
+                }
+            } else {
+                if (pr2 <= pr1) {
+                    document.getElementById('pr1').value = 4.0;
+                    document.getElementById('pr2').value = 18.0;
+                }
+            }
+
+            // High contrast elegant dynamic active border/background
+            document.querySelectorAll('[id^="tab-"]').forEach(tab => {
+                tab.className = 'group flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative overflow-hidden ' +
+                                'bg-white dark:bg-[#111827] hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800';
+            });
+            
+            const activeTab = document.getElementById('tab-' + strategy);
+            if (activeTab) {
+                // Accent color focus
+                activeTab.className = 'group flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all duration-200 relative overflow-hidden ' +
+                                      'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-500/80 dark:border-blue-500/60 shadow-md shadow-blue-500/5';
+            }
+
+            if (strategy.endsWith('call')) {
+                document.getElementById('pr1_label').innerText = "低行权价 Call 权利金 (C₁)";
+                document.getElementById('pr2_label').innerText = "高行权价 Call 权利金 (C₂)";
+            } else {
+                document.getElementById('pr1_label').innerText = "低行权价 Put 权利金 (P₁)";
+                document.getElementById('pr2_label').innerText = "高行权价 Put 权利金 (P₂)";
+            }
+
+            syncAllValues();
+        }
+
+        function applyPreset(presetType) {
+            if (presetType === 'standard') {
+                document.getElementById('k1').value = 90;
+                document.getElementById('k2').value = 110;
+                document.getElementById('st').value = 100;
+                if (currentStrategy.endsWith('call')) {
+                    document.getElementById('pr1').value = 12.0;
+                    document.getElementById('pr2').value = 4.0;
+                } else {
+                    document.getElementById('pr1').value = 3.5;
+                    document.getElementById('pr2').value = 13.5;
+                }
+            } else if (presetType === 'narrow') {
+                document.getElementById('k1').value = 95;
+                document.getElementById('k2').value = 105;
+                document.getElementById('st').value = 101;
+                if (currentStrategy.endsWith('call')) {
+                    document.getElementById('pr1').value = 7.5;
+                    document.getElementById('pr2').value = 3.0;
+                } else {
+                    document.getElementById('pr1').value = 2.5;
+                    document.getElementById('pr2').value = 8.0;
+                }
+            } else if (presetType === 'deep_itm') {
+                document.getElementById('k1').value = 80;
+                document.getElementById('k2').value = 120;
+                document.getElementById('st').value = 105;
+                if (currentStrategy.endsWith('call')) {
+                    document.getElementById('pr1').value = 25.0;
+                    document.getElementById('pr2').value = 2.0;
+                } else {
+                    document.getElementById('pr1').value = 1.0;
+                    document.getElementById('pr2').value = 23.0;
+                }
+            }
+            syncAllValues();
+        }
+
+        function syncSlider(id, value) {
+            document.getElementById(id + '_val').value = value;
+            validateAndCalculate();
+        }
+
+        function syncInput(id, value) {
+            let num = parseFloat(value);
+            if (!isNaN(num)) {
+                const slider = document.getElementById(id);
+                if (num < slider.min) num = slider.min;
+                if (num > slider.max) num = slider.max;
+                slider.value = num;
+                document.getElementById(id + '_val').value = num;
+            }
+            validateAndCalculate();
+        }
+
+        function syncAllValues() {
+            ['k1', 'k2', 'pr1', 'pr2', 'st'].forEach(id => {
+                document.getElementById(id + '_val').value = document.getElementById(id).value;
+            });
+            validateAndCalculate();
+        }
+
+        function validateAndCalculate() {
+            let k1 = parseFloat(document.getElementById('k1').value);
+            let k2 = parseFloat(document.getElementById('k2').value);
+            let pr1 = parseFloat(document.getElementById('pr1').value);
+            let pr2 = parseFloat(document.getElementById('pr2').value);
+            let st = parseFloat(document.getElementById('st').value);
+
+            if (k1 >= k2) {
+                k2 = k1 + 5;
+                document.getElementById('k2').value = k2;
+                document.getElementById('k2_val').value = k2;
+            }
+
+            if (currentStrategy.endsWith('call')) {
+                if (pr1 <= pr2) {
+                    pr2 = Math.max(0.1, pr1 - 1.0);
+                    document.getElementById('pr2').value = pr2.toFixed(1);
+                    document.getElementById('pr2_val').value = pr2.toFixed(1);
+                }
+            } else {
+                if (pr2 <= pr1) {
+                    pr1 = Math.max(0.1, pr2 - 1.0);
+                    document.getElementById('pr1').value = pr1.toFixed(1);
+                    document.getElementById('pr1_val').value = pr1.toFixed(1);
+                }
+            }
+
+            k1 = parseFloat(document.getElementById('k1').value);
+            k2 = parseFloat(document.getElementById('k2').value);
+            pr1 = parseFloat(document.getElementById('pr1').value);
+            pr2 = parseFloat(document.getElementById('pr2').value);
+
+            calculateMetrics(k1, k2, pr1, pr2, st);
+            updateChart(k1, k2, pr1, pr2, st);
+        }
+
+        function calculateMetrics(k1, k2, pr1, pr2, st) {
+            let maxProfit = 0;
+            let maxLoss = 0;
+            let breakeven = 0;
+            let netFlowText = "";
+            let netFlowClass = "";
+            let strategyName = "";
+            let formulaText = "";
+            let descText = "";
+
+            if (currentStrategy === 'bull_call') {
+                const netCost = pr1 - pr2;
+                maxLoss = netCost;
+                maxProfit = (k2 - k1) - netCost;
+                breakeven = k1 + netCost;
+                netFlowText = `-$${netCost.toFixed(2)} (Debit)`;
+                netFlowClass = "text-rose-500 dark:text-rose-400";
+                
+                strategyName = "牛市看涨价差 (Bull Call Spread)";
+                formulaText = "BE = K₁ + C₁ - C₂ | Max Profit = (K₂ - K₁) - (C₁ - C₂) | Max Loss = C₁ - C₂";
+                descText = "典型的买低卖高。通过低行权价 Call 的长头寸获取看涨收益，利用高行权价 Call 的短头寸摊薄期权金成本。最大潜在收益有限，适用于标的波动率温和上涨阶段的稳健对冲。";
+                
+            } else if (currentStrategy === 'bull_put') {
+                const netCredit = pr2 - pr1;
+                maxLoss = (k2 - k1) - netCredit;
+                maxProfit = netCredit;
+                breakeven = k2 - netCredit;
+                netFlowText = `+$${netCredit.toFixed(2)} (Credit)`;
+                netFlowClass = "text-emerald-500 dark:text-emerald-400";
+                
+                strategyName = "牛市看跌价差 (Bull Put Spread)";
+                formulaText = "BE = K₂ - (P₂ - P₁) | Max Profit = P₂ - P₁ | Max Loss = (K₂ - K₁) - (P₂ - P₁)";
+                descText = "信用价差（Credit Spread）。投资者通过卖出高权利金看跌期权（P₂）赚取时间价值。即使标的价格出现小幅横盘震荡或微弱上扬，只要价格维持在 K₂ 之上，即可收割全部溢价利益。";
+
+            } else if (currentStrategy === 'bear_put') {
+                const netCost = pr2 - pr1;
+                maxLoss = netCost;
+                maxProfit = (k2 - k1) - netCost;
+                breakeven = k2 - netCost;
+                netFlowText = `-$${netCost.toFixed(2)} (Debit)`;
+                netFlowClass = "text-rose-500 dark:text-rose-400";
+                
+                strategyName = "熊市看跌价差 (Bear Put Spread)";
+                formulaText = "BE = K₂ - (P₂ - P₁) | Max Profit = (K₂ - K₁) - (P₂ - P₁) | Max Loss = P₂ - P₁";
+                descText = "借记熊市策略。通过买入高行权价看跌期权以提供主要下行保护，同时售出更便宜的低行权价看跌期权获取垫付。非常适用于行情温和下跌且不愿意承受高额期权金资产损耗的情况。";
+
+            } else if (currentStrategy === 'bear_call') {
+                const netCredit = pr1 - pr2;
+                maxLoss = (k2 - k1) - netCredit;
+                maxProfit = netCredit;
+                breakeven = k1 + netCredit;
+                netFlowText = `+$${netCredit.toFixed(2)} (Credit)`;
+                netFlowClass = "text-emerald-500 dark:text-emerald-400";
+                
+                strategyName = "熊市看涨价差 (Bear Call Spread)";
+                formulaText = "BE = K₁ + C₁ - C₂ | Max Profit = C₁ - C₂ | Max Loss = (K₂ - K₁) - (C₁ - C₂)";
+                descText = "温和看空/震荡策略。投资者收取 K₁ 看涨期权高权利金，并买入 K₂ 作为下行突破时的安全阀。此策略具有极强的时间优势（Theta 持续产生正向价值衰减），适合宽幅筑顶震荡期。";
+            }
+
+            const currentPayoff = getPayoffAtPrice(currentStrategy, st, k1, k2, pr1, pr2);
+
+            document.getElementById('metric-max-profit').innerText = `$${maxProfit.toFixed(2)}`;
+            document.getElementById('metric-max-loss').innerText = `$${maxLoss.toFixed(2)}`;
+            document.getElementById('metric-breakeven').innerText = `$${breakeven.toFixed(2)}`;
+            
+            const flowEl = document.getElementById('metric-net-flow');
+            flowEl.innerText = netFlowText;
+            flowEl.className = "text-sm font-semibold font-mono mt-2 " + netFlowClass;
+
+            const plEl = document.getElementById('metric-current-pl');
+            plEl.innerText = `到期损益评价: $${currentPayoff.toFixed(2)}`;
+            if (currentPayoff >= 0) {
+                plEl.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+            } else {
+                plEl.className = "text-xs font-bold px-2.5 py-1 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-500/20";
+            }
+
+            document.getElementById('card-strategy-name').innerText = strategyName;
+            document.getElementById('card-formula-text').innerText = formulaText;
+            document.getElementById('card-desc').innerText = descText;
+        }
+
+        function getPayoffAtPrice(strategy, S, k1, k2, pr1, pr2) {
+            if (strategy === 'bull_call') {
+                const longCall = Math.max(0, S - k1) - pr1;
+                const shortCall = pr2 - Math.max(0, S - k2);
+                return longCall + shortCall;
+            } else if (strategy === 'bull_put') {
+                const longPut = Math.max(0, k1 - S) - pr1;
+                const shortPut = pr2 - Math.max(0, k2 - S);
+                return longPut + shortPut;
+            } else if (strategy === 'bear_put') {
+                const longPut = Math.max(0, k2 - S) - pr2;
+                const shortPut = pr1 - Math.max(0, k1 - S);
+                return longPut + shortPut;
+            } else if (strategy === 'bear_call') {
+                const longCall = Math.max(0, S - k2) - pr2;
+                const shortCall = pr1 - Math.max(0, S - k1);
+                return longCall + shortCall;
+            }
+            return 0;
+        }
+
+        function updateChart(k1, k2, pr1, pr2, st) {
+            const chartData = [];
+            const labels = [];
+            
+            const minPrice = 40;
+            const maxPrice = 160;
+            const step = 1;
+
+            for (let s = minPrice; s <= maxPrice; s += step) {
+                labels.push(s);
+                chartData.push(getPayoffAtPrice(currentStrategy, s, k1, k2, pr1, pr2));
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            
+            // Ultra-clean modern terminal colors
+            const gridColor = isDark ? 'rgba(51, 65, 85, 0.2)' : 'rgba(226, 232, 240, 0.6)';
+            const tickColor = isDark ? '#64748b' : '#94a3b8';
+            const lineColor = '#3b82f6'; // Clean vibrant Indigo-blue
+
+            if (chart) {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = chartData;
+                chart.options.scales.x.grid.color = gridColor;
+                chart.options.scales.x.ticks.color = tickColor;
+                chart.options.scales.y.grid.color = gridColor;
+                chart.options.scales.y.ticks.color = tickColor;
+                chart.update();
+            } else {
+                const ctx = document.getElementById('payoffChart').getContext('2d');
+                
+                const verticalLinePlugin = {
+                    id: 'verticalLine',
+                    afterDraw: (chartInstance) => {
+                        const ctx = chartInstance.ctx;
+                        const xAxis = chartInstance.scales.x;
+                        const yAxis = chartInstance.scales.y;
+                        
+                        const drawVertical = (val, color, isDashed = false, label = '') => {
+                            const xPixel = xAxis.getPixelForValue(val);
+                            if (xPixel >= xAxis.left && xPixel <= xAxis.right) {
+                                ctx.save();
+                                ctx.beginPath();
+                                if (isDashed) {
+                                    ctx.setLineDash([4, 4]);
+                                } else {
+                                    ctx.setLineDash([]);
+                                }
+                                ctx.moveTo(xPixel, yAxis.top);
+                                ctx.lineTo(xPixel, yAxis.bottom);
+                                ctx.strokeStyle = color;
+                                ctx.lineWidth = 1.5;
+                                ctx.stroke();
+                                
+                                // Label strike prices inline elegantly
+                                if (label) {
+                                    ctx.fillStyle = tickColor;
+                                    ctx.font = '10px Inter';
+                                    ctx.fillText(label, xPixel + 5, yAxis.top + 15);
+                                }
+                                ctx.restore();
+                            }
+                        };
+                        
+                        const currK1 = parseFloat(document.getElementById('k1').value);
+                        const currK2 = parseFloat(document.getElementById('k2').value);
+                        const currSt = parseFloat(document.getElementById('st').value);
+                        
+                        drawVertical(currK1, isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(100, 116, 139, 0.25)', true, `K₁:${currK1}`);
+                        drawVertical(currK2, isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(100, 116, 139, 0.25)', true, `K₂:${currK2}`);
+                        
+                        // Active Spot Line (Glowing solid accent)
+                        drawVertical(currSt, '#3b82f6', false, `S_T:${currSt}`);
+                    }
+                };
+
+                chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '到期损益',
+                            data: chartData,
+                            borderColor: lineColor,
+                            borderWidth: 2,
+                            // Modern sleek styling: Dynamic fill based on origin (Above green/below red)
+                            fill: {
+                                target: 'origin',
+                                above: isDark ? 'rgba(16, 185, 129, 0.05)' : 'rgba(16, 185, 129, 0.04)',
+                                below: isDark ? 'rgba(244, 63, 94, 0.05)' : 'rgba(244, 63, 94, 0.04)'
+                            },
+                            tension: 0,
+                            pointRadius: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                                titleColor: isDark ? '#f1f5f9' : '#1e293b',
+                                bodyColor: isDark ? '#94a3b8' : '#64748b',
+                                borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `价格: $${context.parsed.x} -> 损益: $${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                min: minPrice,
+                                max: maxPrice,
+                                grid: {
+                                    color: gridColor
+                                },
+                                ticks: {
+                                    color: tickColor,
+                                    font: {
+                                        family: 'Inter',
+                                        size: 10
+                                    }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: gridColor
+                                },
+                                ticks: {
+                                    color: tickColor,
+                                    font: {
+                                        family: 'Inter',
+                                        size: 10
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    plugins: [verticalLinePlugin, {
+                        id: 'horizontalBaseline',
+                        afterDraw: (chartInstance) => {
+                            const ctx = chartInstance.ctx;
+                            const xAxis = chartInstance.scales.x;
+                            const yAxis = chartInstance.scales.y;
+                            const yPixel = yAxis.getPixelForValue(0);
+                            
+                            if (yPixel >= yAxis.top && yPixel <= yAxis.bottom) {
+                                ctx.save();
+                                ctx.beginPath();
+                                ctx.moveTo(xAxis.left, yPixel);
+                                ctx.lineTo(xAxis.right, yPixel);
+                                ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+                                ctx.lineWidth = 1;
+                                ctx.stroke();
+                                ctx.restore();
+                            }
+                        }
+                    }]
+                });
+            }
+        }
+
+        function updateChartTheme() {
+            if (chart) {
+                chart.destroy();
+                chart = null;
+                validateAndCalculate();
+            }
+        }
+    </script>
+</body>
+</html>
